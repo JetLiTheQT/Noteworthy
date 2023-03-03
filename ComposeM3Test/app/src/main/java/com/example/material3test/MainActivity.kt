@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.input.OffsetMapping
@@ -21,7 +20,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.BaselineShift
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.material3test.ui.theme.Material3TestTheme
 
 class MainActivity : ComponentActivity() {
@@ -113,9 +111,10 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
-                    change.consumeAllChanges()
+                    change.consume()
+                    Log.d("Drag", dragAmount.toString())
                     // If drag is positive toward the right, then add completionText to text
-                    if (dragAmount.x > 0 && completionText != "") {
+                    if (dragAmount.x > 100 && completionText != "") {
                         text = text.plus(completionText)
                         completionText = ""
                         text1 = TextFieldValue(text + completionText, TextRange(text.length, text.length))
@@ -125,8 +124,6 @@ class MainActivity : ComponentActivity() {
         )
     }
 }
-
-
 
 class ColorsTransformation(private var completionText: String) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
