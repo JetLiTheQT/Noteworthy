@@ -27,8 +27,7 @@ class CompletionViewModel: ViewModel() {
     private val _loadingStatus = MutableLiveData<LoadingStatus>(LoadingStatus.SUCCESS)
     val loadingStatus: LiveData<LoadingStatus> = _loadingStatus
 
-
-    fun fetchCompletion(input: String) {
+    fun fetchAction(input: String) {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
@@ -44,6 +43,35 @@ class CompletionViewModel: ViewModel() {
                     "{\n" +
                     "\"value\": \""+ input  + "\",\n" +
                     "}\n"
+
+            val completionRequest = CompletionRequest(
+                model = ModelId("text-davinci-003"),
+                prompt = prompt,
+                echo = false,
+                maxTokens = 256,
+            )
+            val result: TextCompletion = openAI.completion(completionRequest)
+            Log.d("CompletionViewModel", "fetchAction: $result.choices")
+            _completionResults.value = result.choices
+            _errorMessage.value = result.choices.isEmpty().let {
+                when(it) {
+                    true -> "No results found"
+                    false -> null
+                }
+            }
+            _loadingStatus.value = when(result.choices.isNotEmpty()) {
+                true -> LoadingStatus.SUCCESS
+                false -> LoadingStatus.ERROR
+            }
+        }
+    }
+
+    fun fetchCompletion(input: String) {
+        viewModelScope.launch {
+            _loadingStatus.value = LoadingStatus.LOADING
+
+            var prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text: \n" +
+                    input
 
             val completionRequest = CompletionRequest(
                 model = ModelId("text-davinci-003"),
