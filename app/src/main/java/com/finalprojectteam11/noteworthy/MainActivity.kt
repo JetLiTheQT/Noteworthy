@@ -359,7 +359,7 @@ class MainActivity : ComponentActivity() {
                 context.startActivity(
                     Intent(
                         context,
-                        NoteActivity::class.java
+                        TestAIActivity::class.java
                     )
                 )
             },
