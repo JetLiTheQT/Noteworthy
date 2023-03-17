@@ -34,108 +34,69 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
-
-class NoteActivity : ComponentActivity() {
-    var currentDisplayChoice by mutableStateOf(false)
-    var searchQuery by mutableStateOf("")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MyApplicationTheme {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(text = "Add Note") },
-                            navigationIcon = {
-                                IconButton(onClick = {
-                                    navigateUpTo(Intent(this@NoteActivity, MainActivity::class.java))
-                                },) {
-                                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.padding(14.dp))
-                                }
-                            },
-                            backgroundColor = Color(0xFF3694C9),
-                            contentColor = Color.White,
-                        )
-                    },
-                    bottomBar = {
-                        BottomAppBar(
-                            cutoutShape = CircleShape,
-                            contentPadding = PaddingValues(48.dp, 8.dp),
-                            contentColor = Color(0xFF3694C9),
-                            backgroundColor = Color(0xFFFFFFFF),
-                            modifier = Modifier.clip(
-                                RoundedCornerShape(25.dp, 25.dp, 0.dp, 0.dp))
-                        ) {
-                            IconToggleButton(checked = true, onCheckedChange = {}) {
-                                if (false) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Filled.Home, contentDescription = "Home")
-                                        Text(text = "Home")
-                                    }
-                                } else {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Gray)
-                                        Text(text = "Home", color = Color.Gray)
-                                    }
-                                }
+@Composable
+fun NoteScreen(navController: NavController) {
+    var currentDisplayChoice by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+        MyApplicationTheme {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(text = "Add Note") },
+                        navigationIcon = {
+                            IconButton(
+                                onClick = {
+                                    navController.popBackStack()
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    modifier = Modifier.padding(14.dp)
+                                )
                             }
-                            Spacer(modifier = Modifier.weight(1f))
-                            IconToggleButton(checked = false, onCheckedChange = {}) {
-                                if (false) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                                        Text(text = "Settings")
-                                    }
-                                } else {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Gray)
-                                        Text(text = "Settings", color = Color.Gray)
-                                    }
-                                }
-                            }
-
-                        }
-                    },
-                    floatingActionButtonPosition = FabPosition.Center,
-                    isFloatingActionButtonDocked = true,
-                    floatingActionButton = { FloatingButtons() },
-                    backgroundColor = Color(0xFFEFEFEF),
-                ) { innerPadding ->
-                    Surface(
+                        },
+                        backgroundColor = Color(0xFF3694C9),
+                        contentColor = Color.White,
+                    )
+                }
+            ) { innerPadding ->
+                Surface(
+                    modifier = Modifier
+                        .padding(innerPadding),
+                    color = Color(0xFFEFEFEF),
+                ) {
+                    LazyColumn(
                         modifier = Modifier
-                            .padding(innerPadding),
-                        color = Color(0xFFEFEFEF),
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(0.dp)
-                        ) {
-                            item {
-                                ComposeNote()
-                            }
-                            item {
-                                TextInputBox()
-                            }
-                            item {
-                                NoteControls()
-                            }
-                            item {
-                                Spacer(modifier = Modifier.height(50.dp))
-                            }
+                        item {
+                            ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
+                        }
+                        item {
+                            TextInputBox()
+                        }
+                        item {
+                            NoteControls()
+                        }
+                        item {
+                            Spacer(modifier = Modifier.height(50.dp))
                         }
                     }
-                }
             }
         }
     }
+}
+
 
     @Composable
-    fun ComposeNote() {
+    fun ComposeNote(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
         TextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = onSearchQueryChange,
             label = { Text(text = "Note Title") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -284,33 +245,8 @@ class NoteActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun FloatingButtons() {
-        var context = LocalContext.current
-        FloatingActionButton(
-            shape = CircleShape,
-            onClick = {
-                context.startActivity(
-                    Intent(
-                        context,
-                        NoteActivity::class.java
-                    )
-                )
-            },
-            backgroundColor = Color(0xFF3694C9),
-            contentColor = Color.White,
-            modifier = Modifier
-                .size(72.dp)
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.edit_fill1_wght400_grad0_opsz48),
-                contentDescription = "Add Note",
-                modifier = Modifier
-                    .padding(18.dp)
-            )
-        }
-    }
-}
+
+
 
 
 
