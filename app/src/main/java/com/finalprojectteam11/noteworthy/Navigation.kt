@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +71,8 @@ fun MainScreen() {
     val isChildScreen = currentRoute != Screen.Home.route // Check if current screen is a child screen
 
     Scaffold(
+        modifier = Modifier.fillMaxSize().padding(0.dp),
+        backgroundColor = Color.Transparent,
         topBar = {
             if (!isChildScreen) { // Display regular TopAppBar for non-child screens
                 TopAppBar(
@@ -85,14 +88,15 @@ fun MainScreen() {
                 BottomAppBar(
                     cutoutShape = CircleShape,
                     contentColor = Color(0xFF3694C9),
-                    backgroundColor = Color(0xFFFFFFFF),
-                    modifier = Modifier.clip(
-                        RoundedCornerShape(25.dp, 25.dp, 0.dp, 0.dp))
+                    backgroundColor = Color.Transparent,
+                    modifier = Modifier
+                        .fillMaxWidth().shadow(0.dp),
+                    elevation = 0.dp // Remove elevation to avoid multiple layers
                 ) {
                     BottomNavigation(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().shadow(0.dp),
                         contentColor = Color(0xFF3694C9),
-                        backgroundColor = Color.Transparent,
+                        backgroundColor = Color(0xFFFFFFFF),
                         elevation = 0.dp // Remove elevation to avoid multiple layers
                     ) {
                         items.forEach { screen ->
