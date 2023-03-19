@@ -37,16 +37,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.aallam.openai.api.completion.CompletionRequest
+import com.aallam.openai.api.completion.TextCompletion
+import com.finalprojectteam11.noteworthy.data.LoadingStatus
+import com.finalprojectteam11.noteworthy.ui.theme.CompletionViewModel
 import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @Composable
 fun NoteScreen(navController: NavController) {
     var currentDisplayChoice by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var noteText = remember { mutableStateOf("") }
-    var noteTextField = remember { mutableStateOf(TextFieldValue()) }
-    var completionText = remember { mutableStateOf(" testing") }
+    val noteText = remember { mutableStateOf("") }
+    val noteTextField = remember { mutableStateOf(TextFieldValue()) }
+    val completionText = remember { mutableStateOf("") }
+    val changedByCompletion = remember { mutableStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -112,7 +119,7 @@ fun NoteScreen(navController: NavController) {
                                 ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
                             }
                             item {
-                                TextInputBox(noteTextField, noteText, completionText)
+                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion)
                             }
                             item {
                                 NoteControls(launcher,snackbarHostState)
@@ -150,6 +157,7 @@ fun ComposeNote(
                 text = "Enter Note Title",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
+                color = Color.Black
             )
         },
         modifier = Modifier
@@ -186,14 +194,18 @@ fun ComposeNote(
 
 
 @Composable
-fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableState<String>, completion: MutableState<String>) {
+fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableState<String>, completion: MutableState<String>, changedByCompletion: MutableState<Int>) {
     var completionText by remember { mutableStateOf("") }
     completionText = completion.value
     noteTextField.value = TextFieldValue(noteText.value + completionText, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
+    val coroutineScope = rememberCoroutineScope()
 
     TextField(
         value = noteTextField.value,
         onValueChange = {
+
+            var performCompletion = true
+
             // Backup previous text for comparison
             val previousText = noteText.value.plus(completionText)
 
@@ -251,6 +263,7 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
                     completionText = ""
                     noteTextField.value = TextFieldValue(noteText.value + completionText, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
                 } else {
+                    performCompletion = false
                     Log.d("NoteActivity", "Cursor moved")
                     // if selectionEnd is less than index of completionText, then set selectionEnd to index of completionText
                     var selectionStart = it.selection.start
@@ -263,6 +276,18 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
                     }
                     noteTextField.value = TextFieldValue(noteText.value + completionText, TextRange(selectionStart, selectionEnd))
                 }
+            }
+
+            if (changedByCompletion.value == 0 && performCompletion) {
+                // Cancel any ongoing search
+                coroutineScope.coroutineContext.cancelChildren()
+                // Launch a new search after 2 seconds
+                coroutineScope.launch {
+                    delay(2000)
+                    performAutoCompleteSearch(noteText.value, completion, changedByCompletion)
+                }
+            } else {
+                changedByCompletion.value = 0
             }
         },
         label = { Text("Note Content") },
@@ -304,7 +329,9 @@ fun NoteControls(launcher: ActivityResultLauncher<Intent>, snackbarHostState: Sn
     val focusManager = LocalFocusManager.current
     Divider(modifier = Modifier
         .fillMaxWidth()
-        .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp))
+        .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
+        color = Color.LightGray
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -366,6 +393,34 @@ fun isSpeechRecognizerAvailable(context: Context): Boolean {
                 OffsetMapping.Identity)
         }
     }
+
+fun performAutoCompleteSearch(searchText: String, completion: MutableState<String>, changedByCompletion: MutableState<Int>) {
+    if (searchText != "") {
+
+        // Implement your autocompletion logic here
+        Log.d("AutoComplete", "Performing auto complete search for $searchText")
+
+        var completionViewModel = CompletionViewModel()
+        completionViewModel.fetchCompletion(searchText)
+
+        // once the completion is fetched, update the completion state
+        completionViewModel.loadingStatus.observeForever {
+            if (it == LoadingStatus.SUCCESS) {
+                // check if completion is empty
+                if (completionViewModel.completionResults.value?.choices?.isNotEmpty() == true) {
+                    completion.value =
+                        completionViewModel.completionResults.value?.choices?.get(0)?.text
+                            ?: ""
+                } else {
+                    completion.value = ""
+                }
+            } else {
+                completion.value = ""
+            }
+            changedByCompletion.value = 1
+        }
+    }
+}
 
 fun buildAnnotatedStringWithColors(text:String, completionText: String): AnnotatedString{
     val builder = AnnotatedString.Builder()

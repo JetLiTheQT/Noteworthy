@@ -13,13 +13,14 @@ import com.aallam.openai.client.OpenAI
 import com.finalprojectteam11.noteworthy.BuildConfig
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import kotlinx.coroutines.launch
+import org.w3c.dom.Text
 
 class CompletionViewModel: ViewModel() {
     private val OPENAI_KEY = BuildConfig.OPENAI_API_KEY
     private val openAI = OpenAI(OPENAI_KEY)
 
-    private val _completionResults = MutableLiveData<List<Choice>>(null)
-    val completionResults: LiveData<List<Choice>> = _completionResults
+    private val _completionResults = MutableLiveData<TextCompletion>(null)
+    val completionResults: LiveData<TextCompletion> = _completionResults
 
     private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: LiveData<String?> = _errorMessage
@@ -52,7 +53,7 @@ class CompletionViewModel: ViewModel() {
             )
             val result: TextCompletion = openAI.completion(completionRequest)
             Log.d("CompletionViewModel", "fetchAction: $result.choices")
-            _completionResults.value = result.choices
+            _completionResults.value = result
             _errorMessage.value = result.choices.isEmpty().let {
                 when(it) {
                     true -> "No results found"
@@ -70,7 +71,7 @@ class CompletionViewModel: ViewModel() {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
-            var prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text: \n" +
+            var prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text and no prepended new lines, unless you are starting a new paragraph: \n" +
                     input
 
             val completionRequest = CompletionRequest(
@@ -80,8 +81,7 @@ class CompletionViewModel: ViewModel() {
                 maxTokens = 256,
             )
             val result: TextCompletion = openAI.completion(completionRequest)
-            Log.d("CompletionViewModel", "fetchCompletion: $result.choices")
-            _completionResults.value = result.choices
+            _completionResults.value = result
             _errorMessage.value = result.choices.isEmpty().let {
                 when(it) {
                     true -> "No results found"
