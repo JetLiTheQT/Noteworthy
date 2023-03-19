@@ -49,7 +49,7 @@ fun AppNavigator(navController: NavHostController) {
 
 fun getTitleForScreen(screen: Screen): String {
     return when (screen) {
-        is Screen.Home -> "Home"
+        is Screen.Home -> "Noteworthy"
         is Screen.AddNote -> "Add Note"
         is Screen.Settings -> "Settings"
         else -> {""}
