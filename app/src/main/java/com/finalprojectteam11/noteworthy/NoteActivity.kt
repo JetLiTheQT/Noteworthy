@@ -104,7 +104,7 @@ fun NoteScreen(navController: NavController) {
                 SnackbarHost(
                     hostState = snackbarHostState,
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
+                        .align(Alignment.BottomCenter)
                         .padding(top = 1.dp)
                 )
         }
@@ -272,6 +272,7 @@ fun TextInputBox(noteText: MutableState<String>) {
 fun NoteControls(noteText: MutableState<String>, launcher: ActivityResultLauncher<Intent>, snackbarHostState: SnackbarHostState) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     Divider(modifier = Modifier
         .fillMaxWidth()
         .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp))
@@ -304,7 +305,13 @@ fun NoteControls(noteText: MutableState<String>, launcher: ActivityResultLaunche
 
         }
         Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = { /*TODO*/ },
+        Button(onClick = {
+                focusManager.clearFocus() // Close the keyboard tray
+                /* TODO; Make it so that the button gives the user feedback the the note is saved and update the db*/
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Note Saved Successfully")
+                }
+                         },
             shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp),
             modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
                 ,

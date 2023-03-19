@@ -1,6 +1,9 @@
 package com.finalprojectteam11.noteworthy
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.SharedPreferences
+import android.preference.PreferenceManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -10,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -19,11 +23,16 @@ import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun SettingsScreen(navController: NavHostController) {
+    val context = LocalContext.current
     val languageOptions = listOf("English", "Spanish", "French")
     val sortByOptions = listOf("Name (A-Z)", "Name (Z-A)", "Date (oldest first)", "Date (newest first)")
 
-    var selectedLanguage by remember { mutableStateOf(languageOptions[0]) }
-    var selectedSortBy by remember { mutableStateOf(sortByOptions[0]) }
+    val selectedLanguageValue = loadSelectedLanguage(context, languageOptions)
+    val selectedSortByValue = loadSelectedSortBy(context, sortByOptions)
+
+    val selectedLanguage = remember { mutableStateOf(selectedLanguageValue) }
+    val selectedSortBy = remember { mutableStateOf(selectedSortByValue) }
+
 
     MyApplicationTheme {
         Scaffold(
@@ -77,8 +86,8 @@ fun SettingsScreen(navController: NavHostController) {
 
                 RadioGroup(
                     options = languageOptions,
-                    selectedOption = selectedLanguage,
-                    onOptionSelected = { selectedLanguage = it }
+                    selectedOption = selectedLanguage.value,
+                    onOptionSelected = { option -> selectedLanguage.value = option }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -91,16 +100,46 @@ fun SettingsScreen(navController: NavHostController) {
 
                 RadioGroup(
                     options = sortByOptions,
-                    selectedOption = selectedSortBy,
-                    onOptionSelected = { selectedSortBy = it }
+                    selectedOption = selectedSortBy.value,
+                    onOptionSelected = { option -> selectedSortBy.value = option }
                 )
-
-
             }
         }
     }
+    SaveSettingsOnDispose(selectedLanguage, selectedSortBy)
+
+}
+@Composable
+fun SaveSettingsOnDispose(selectedLanguage: MutableState<String>, selectedSortBy: MutableState<String>) {
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        onDispose {
+            saveSelectedLanguage(context, selectedLanguage.value)
+            saveSelectedSortBy(context, selectedSortBy.value)
+        }
+    }
+}
+private const val SELECTED_LANGUAGE_KEY = "selectedLanguage"
+private const val SELECTED_SORT_BY_KEY = "selectedSortBy"
+@Composable
+private fun loadSelectedLanguage(context: Context, options: List<String>): String {
+    return getPreferences(context).getString(SELECTED_LANGUAGE_KEY, options[0]) ?: options[0]
+}
+@Composable
+private fun loadSelectedSortBy(context: Context,options: List<String>): String {
+    return getPreferences(context).getString(SELECTED_SORT_BY_KEY, options[0]) ?: options[0]
+}
+private fun saveSelectedLanguage(context: Context, selectedLanguage: String) {
+    getPreferences(context).edit().putString(SELECTED_LANGUAGE_KEY, selectedLanguage).apply()
 }
 
+private fun saveSelectedSortBy(context: Context, selectedSortBy: String) {
+    getPreferences(context).edit().putString(SELECTED_SORT_BY_KEY, selectedSortBy).apply()
+}
+
+private fun getPreferences(context: Context): SharedPreferences {
+    return PreferenceManager.getDefaultSharedPreferences(context)
+}
 @Composable
 fun RadioGroup(
     options: List<String>,
