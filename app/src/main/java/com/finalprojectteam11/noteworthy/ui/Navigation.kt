@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,6 +15,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,6 +25,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -33,12 +38,17 @@ import androidx.navigation.*
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.Note
+import com.finalprojectteam11.noteworthy.ui.theme.AlgoliaViewModel
+import androidx.compose.ui.text.input.ImeAction
+import com.finalprojectteam11.noteworthy.data.LoadingStatus
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object AddNote : Screen("add_note")
     object Settings : Screen("settings")
     object EditNote : Screen("edit_note/{note_id}")
+    object Search: Screen("search/{query}")
 }
 @Composable
 fun AppNavigator(navController: NavHostController) {
@@ -55,6 +65,16 @@ fun AppNavigator(navController: NavHostController) {
             )
         ) { backStackEntry ->
             NoteScreen(navController, backStackEntry.arguments?.getString("note_id"))
+        }
+        composable(
+            Screen.Search.route,
+            arguments = listOf(
+                navArgument("query") {
+                    type = NavType.StringType
+                },
+            )
+        ) { backStackEntry ->
+            SearchScreen(navController, backStackEntry.arguments?.getString("query"))
 
         }
     }
@@ -76,12 +96,13 @@ fun MainScreen() {
     val items = listOf(Screen.Home, Screen.AddNote, Screen.Settings)
     val currentScreen = navController.currentBackStackEntryAsState()
     val currentDisplayChoice = remember { mutableStateOf(false) }
-    var searchQuery by mutableStateOf("")
+    var searchQuery = mutableStateOf("")
     // Get the current screen and its title
     val currentRoute = currentScreen.value?.destination?.route
     val currentSelectedScreen = items.find { it.route == currentRoute }
     val title = currentSelectedScreen?.let { getTitleForScreen(it) } ?: ""
     val isChildScreen = currentRoute != Screen.Home.route // Check if current screen is a child screen
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val firestoreViewModel = FirestoreViewModel()
     firestoreViewModel.getNotes()
@@ -219,7 +240,14 @@ fun MainScreen() {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         item {
-                            SearchBox(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
+                            SearchBox(
+                                searchQuery = searchQuery,
+                                onSearchQueryChange = {
+                                    searchQuery.value = it
+                                },
+                                snackbarHostState,
+                                navController
+                            )
                         }
                         item {
                             filterSection()
@@ -241,6 +269,13 @@ fun MainScreen() {
                     }
                 }
                 AppNavigator(navController)
+                // Position the SnackbarHost at the top
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(top = 1.dp)
+                )
             }
         },
     )
@@ -269,14 +304,21 @@ fun FloatingActionButton(navController: NavController){
                 .padding(18.dp)
         )
     }
-
 }
 
 @Composable
-fun SearchBox(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
+fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -> Unit, snackbarHostState: SnackbarHostState, navController: NavController) {
+    val focusRequester = remember { FocusRequester() }
+
     TextField(
-        value = searchQuery,
+        singleLine = true,
+        value = searchQuery.value,
         onValueChange = onSearchQueryChange,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = {
+            navController.navigate("search/" + searchQuery.value)
+            focusRequester.freeFocus()
+        }),
         label = { Text(text = "Search") },
         leadingIcon = {
             Icon(
@@ -288,8 +330,9 @@ fun SearchBox(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
-            .height(48.dp)
-            .clip(RoundedCornerShape(10.dp)),
+            .height(56.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .focusRequester(focusRequester),
         colors = TextFieldDefaults.textFieldColors(
             focusedLabelColor = Color.Black,
             cursorColor = Color.Black,
