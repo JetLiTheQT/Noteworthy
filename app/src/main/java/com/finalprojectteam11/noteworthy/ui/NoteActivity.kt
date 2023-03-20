@@ -5,15 +5,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,12 +26,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.*
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.*
@@ -44,6 +54,7 @@ import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlin.properties.Delegates
 
 @Composable
 fun NoteScreen(navController: NavController, noteId : String?) {
@@ -220,109 +231,175 @@ fun ComposeNote(
 fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableState<String>, completion: MutableState<String>, changedByCompletion: MutableState<Int>) {
     noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
     val coroutineScope = rememberCoroutineScope()
+    var cursorPosition by remember { mutableStateOf(0) }
+    val scrollState = rememberScrollState()
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenHeight = configuration.screenHeightDp.dp
 
-    TextField(
-        value = noteTextField.value,
-        onValueChange = {
-            var performCompletion = true
+    val statusBarHeight = with(density) { 24.dp } // example value
+    val appBarHeight = with(density) { 56.dp } // example value
+    val contentHeight = screenHeight - statusBarHeight - appBarHeight
 
-            // Backup previous text for comparison
-            val previousText = noteText.value.plus(completion.value)
+    val textfieldHeight = with(density) { 48.dp } // example value
+    val remainingHeight = contentHeight - textfieldHeight
 
-            // If the user deletes text, clear the completion text
-            if (it.text.length < previousText.length) {
-                noteText.value = it.text.substring(0, it.text.length - completion.value.length)
-                completion.value = ""
-                noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(it.selection.start, it.selection.start))
-            }
+    val lineHeight = with(density) { 16.sp.toPx().dp } // example value
+    val numLines = (remainingHeight/lineHeight).toInt()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
+            .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp))
+            .background(Color(0xFFE5E5E5))
+            .height(300.dp) // Set a fixed height for the Box
+    ) {
+        TextField(
+            value = noteTextField.value,
+            onValueChange = {
+                var performCompletion = true
+                cursorPosition = noteTextField.value.selection.start // update cursor position
+                if (noteTextField.value.selection.start == noteTextField.value.text.length) {
+                    coroutineScope.launch {
+                        scrollState.animateScrollTo(scrollState.maxValue) // scroll to the end of the text
+                    }
+                }
+//                Log.d("TextField", "CursorPositionValue:  {$cursorPosition}")
+                // Backup previous text for comparison
+                val previousText = noteText.value.plus(completion.value)
 
-            // If the user adds text, check if it matches the completion text
-            else if (it.text.length > previousText.length) {
-                val newText = it.text.substring(0, it.text.length - completion.value.length)
-                val differenceLength = newText.length - noteText.value.length
+                // If the user deletes text, clear the completion text
+                if (it.text.length < previousText.length) {
+                    noteText.value = it.text.substring(0, it.text.length - completion.value.length)
+                    completion.value = ""
+                    noteTextField.value = TextFieldValue(
+                        noteText.value + completion.value,
+                        TextRange(it.selection.start, it.selection.start)
+                    )
+                }
 
-                // If previous text starts with new text, add the difference to completion text
-                if (previousText.startsWith(newText)) {
+                // If the user adds text, check if it matches the completion text
+                else if (it.text.length > previousText.length) {
+                    val newText = it.text.substring(0, it.text.length - completion.value.length)
+                    val differenceLength = newText.length - noteText.value.length
 
-                    // If there is a match, find the difference and move it from completion text to text
-                    val oldCompletionText = it.text.substring(it.text.length - completion.value.length, it.text.length)
-                    val newCompletionText = completion.value.substring(differenceLength, completion.value.length)
+                    // If previous text starts with new text, add the difference to completion text
+                    if (previousText.startsWith(newText)) {
 
-                    // If completion text was modified, clear completion text
-                    if (!completion.value.contains(oldCompletionText)) {
-                        noteText.value = newText
+                        // If there is a match, find the difference and move it from completion text to text
+                        val oldCompletionText = it.text.substring(
+                            it.text.length - completion.value.length,
+                            it.text.length
+                        )
+                        val newCompletionText =
+                            completion.value.substring(differenceLength, completion.value.length)
+
+                        // If completion text was modified, clear completion text
+                        if (!completion.value.contains(oldCompletionText)) {
+                            noteText.value = newText
+                            completion.value = ""
+
+                            noteTextField.value = TextFieldValue(
+                                noteText.value + completion.value,
+                                TextRange(it.selection.start, it.selection.start)
+                            )
+
+                            // If completion text was not modified, add new completionText
+                        } else {
+                            performCompletion = false
+                            noteText.value = newText
+                            completion.value = newCompletionText
+                            noteTextField.value = TextFieldValue(
+                                noteText.value + completion.value,
+                                TextRange(it.selection.start, it.selection.start)
+                            )
+                        }
+
+                        // If previousText was modified, clear completion text
+                    } else {
+                        noteText.value =
+                            it.text.substring(0, it.text.length - completion.value.length)
                         completion.value = ""
 
-                        noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(it.selection.start, it.selection.start))
-
-                    // If completion text was not modified, add new completionText
-                    } else {
-                        performCompletion = false
-                        noteText.value = newText
-                        completion.value = newCompletionText
-                        noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(it.selection.start, it.selection.start))
+                        noteTextField.value = TextFieldValue(
+                            noteText.value + completion.value,
+                            TextRange(it.selection.start, it.selection.start)
+                        )
                     }
-
-                // If previousText was modified, clear completion text
+                    // If text length is the same, check if the user is selecting text, moving the cursor, or modifying the text
                 } else {
-                    noteText.value = it.text.substring(0, it.text.length - completion.value.length)
-                    completion.value = ""
-
-                    noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(it.selection.start, it.selection.start))
-                }
-            // If text length is the same, check if the user is selecting text, moving the cursor, or modifying the text
-            } else {
-                if (it.text != noteText.value + completion.value) {
-                    noteText.value = it.text.substring(0, it.text.length - completion.value.length)
-                    completion.value = ""
-                    noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
-                } else {
-                    performCompletion = false
-                    // if selectionEnd is less than index of completion text, then set selectionEnd to index of completion text
-                    var selectionStart = it.selection.start
-                    var selectionEnd = it.selection.end
-                    if (it.selection.end > noteText.value.length) {
-                        selectionEnd = noteText.value.length
-                        if (it.selection.start > noteText.value.length) {
-                            selectionStart = noteText.value.length
-                        }
-                    }
-                    noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(selectionStart, selectionEnd))
-                }
-            }
-
-            if (changedByCompletion.value == 0 && performCompletion) {
-                // Cancel any ongoing search
-                coroutineScope.coroutineContext.cancelChildren()
-                // Launch a new search after 2 seconds
-                coroutineScope.launch {
-                    delay(1500)
-                    performAutoCompleteSearch(noteText.value, completion, changedByCompletion)
-                }
-            } else {
-                changedByCompletion.value = 0
-            }
-        },
-        label = { Text("Note Content") },
-        visualTransformation = ColorsTransformation(completion.value),
-        modifier = Modifier
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    // If drag is positive toward the right, then add completion text to text
-                    if (dragAmount.x > 100 && completion.value != "") {
-                        noteText.value = noteText.value.plus(completion.value)
+                    if (it.text != noteText.value + completion.value) {
+                        noteText.value =
+                            it.text.substring(0, it.text.length - completion.value.length)
                         completion.value = ""
                         noteTextField.value = TextFieldValue(
                             noteText.value + completion.value,
-                            TextRange(noteText.value.length, noteText.value.length)
+                            TextRange(
+                                noteTextField.value.selection.start,
+                                noteTextField.value.selection.end
+                            )
+                        )
+                    } else {
+                        performCompletion = false
+                        // if selectionEnd is less than index of completion text, then set selectionEnd to index of completion text
+                        var selectionStart = it.selection.start
+                        var selectionEnd = it.selection.end
+                        if (it.selection.end > noteText.value.length) {
+                            selectionEnd = noteText.value.length
+                            if (it.selection.start > noteText.value.length) {
+                                selectionStart = noteText.value.length
+                            }
+                        }
+                        noteTextField.value = TextFieldValue(
+                            noteText.value + completion.value,
+                            TextRange(selectionStart, selectionEnd)
                         )
                     }
                 }
-            }
-            .fillMaxWidth()
-            .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
-            .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp)),
+
+                if (changedByCompletion.value == 0 && performCompletion) {
+                    // Cancel any ongoing search
+                    coroutineScope.coroutineContext.cancelChildren()
+                    // Launch a new search after 2 seconds
+                    coroutineScope.launch {
+                        delay(1500)
+                        performAutoCompleteSearch(noteText.value, completion, changedByCompletion)
+                    }
+                } else {
+                    changedByCompletion.value = 0
+                }
+            },
+            label = { Text("Note Content") },
+            visualTransformation = ColorsTransformation(completion.value),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // listen for the Done key event
+            keyboardActions = KeyboardActions(onDone = {
+                // NOT WORKING confused but it's supposed to scroll to the new line
+                coroutineScope.launch {
+                    val cursorLine = cursorPosition / numLines
+                    val scrollPosition = cursorLine * with(density) { lineHeight.toPx() }
+                    scrollState.animateScrollTo(scrollPosition.toInt())
+                }
+            }),
+            modifier = Modifier
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures { change, dragAmount ->
+                        change.consume()
+                        // If drag is positive toward the right, then add completion text to text
+                        if (dragAmount > 100 && completion.value != "") {
+                            noteText.value = noteText.value.plus(completion.value)
+                            completion.value = ""
+                            noteTextField.value = TextFieldValue(
+                                noteText.value + completion.value,
+                                TextRange(noteText.value.length, noteText.value.length)
+                            )
+                        }
+                    }
+                }
+                .padding(16.dp) // Add padding to the TextField to center the text vertically
+                .fillMaxWidth()
+                .wrapContentHeight() // Allow the TextField to wrap its content height
+                .verticalScroll(rememberScrollState()) // Enable vertical scrolling if necessary
+                .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp)),
             colors = TextFieldDefaults.textFieldColors(
                 focusedLabelColor = Color.Black,
                 cursorColor = Color.Black,
@@ -333,6 +410,7 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
                 unfocusedLabelColor = Color.Black,
             )
         )
+    }
 }
 
 @Composable
