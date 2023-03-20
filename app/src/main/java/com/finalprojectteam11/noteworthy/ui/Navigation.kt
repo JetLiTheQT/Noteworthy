@@ -68,25 +68,19 @@ fun getTitleForScreen(screen: Screen): String {
 @Composable
 fun FloatingActionButton(navController: NavController){
     if (navController.currentBackStackEntryAsState().value?.destination?.route == Screen.Home.route) {
-        var context = LocalContext.current
         FloatingActionButton(
-            shape = CircleShape,
-            onClick = {
-                navController.navigate(Screen.AddNote.route) {
-                    popUpTo(navController.graph.startDestinationId)
-                    launchSingleTop = true
-                }
-            },
+            onClick = { navController.navigate(Screen.AddNote.route) },
             backgroundColor = Color(0xFF3694C9),
             contentColor = Color.White,
             modifier = Modifier
-                .size(72.dp)
+                .padding(16.dp)
+                .size(72.dp),
+            shape = CircleShape
         ) {
             Icon(
                 imageVector = ImageVector.vectorResource(id = R.drawable.edit_fill1_wght400_grad0_opsz48),
                 contentDescription = "Add Note",
-                modifier = Modifier
-                    .padding(18.dp)
+                modifier = Modifier.padding(18.dp)
             )
         }
     }
@@ -121,8 +115,9 @@ fun TopNavBar (navController: NavHostController) {
 @Composable
 fun BottomNavBar(navController: NavHostController) {
     val items = listOf(Screen.Home, Screen.AddNote, Screen.Settings)
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     // Display regular TopAppBar for non-child screens
-    if (navController.currentBackStackEntryAsState().value?.destination?.route == Screen.Home.route) {
+    if (currentRoute == Screen.Home.route) {
         BottomAppBar(
             cutoutShape = CircleShape,
             contentColor = Color(0xFF3694C9),
@@ -141,19 +136,13 @@ fun BottomNavBar(navController: NavHostController) {
                 elevation = 0.dp // Remove elevation to avoid multiple layers
             ) {
                 items.forEach { screen ->
-                    if (screen is Screen.AddNote) return@forEach
+                    val isSelected = currentRoute == screen.route
                     BottomNavigationItem(
                         icon = {
                             when (screen) {
-                                is Screen.Home -> Icon(
-                                    Icons.Filled.Home,
-                                    contentDescription = "Home"
-                                )
-                                is Screen.Settings -> Icon(
-                                    Icons.Filled.Settings,
-                                    contentDescription = "Settings"
-                                )
-                                else -> Unit
+                                is Screen.Home -> Icon(Icons.Filled.Home, contentDescription = "Home")
+                                is Screen.Settings -> Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                                else -> { }
                             }
                         },
                         label = {
@@ -161,11 +150,11 @@ fun BottomNavBar(navController: NavHostController) {
                                 text = when (screen) {
                                     is Screen.Home -> "Home"
                                     is Screen.Settings -> "Settings"
-                                    else -> ""
+                                    else -> {""}
                                 }
                             )
                         },
-                        selected = navController.currentBackStackEntryAsState().value?.destination?.route == screen.route,
+                        selected = isSelected,
                         onClick = {
                             navController.navigate(screen.route) {
                                 popUpTo(navController.graph.startDestinationId)
