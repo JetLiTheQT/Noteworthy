@@ -31,30 +31,8 @@ fun SettingsScreen(navController: NavHostController) {
     val selectedLanguage = remember { mutableStateOf(selectedLanguageValue) }
     val selectedSortBy = remember { mutableStateOf(selectedSortByValue) }
 
-
     MyApplicationTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(text = "Settings") },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                navController.popBackStack()
-                            },
-                        ) {
-                            Icon(
-                                Icons.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                modifier = Modifier.padding(14.dp)
-                            )
-                        }
-                    },
-                    backgroundColor = Color(0xFF3694C9),
-                    contentColor = Color.White,
-                )
-            }
-        ) {
+        Scaffold {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {

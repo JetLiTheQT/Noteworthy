@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,26 +55,6 @@ fun SearchScreen(navController: NavController, query : String?) {
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 backgroundColor = Color(0xFFEFEFEF),
-                topBar = {
-                    TopAppBar(
-                        title = { Text(text = "Search Results") },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = {
-                                    navController.popBackStack()
-                                },
-                            ) {
-                                Icon(
-                                    Icons.Filled.ArrowBack,
-                                    contentDescription = "Back",
-                                    modifier = Modifier.padding(14.dp)
-                                )
-                            }
-                        },
-                        backgroundColor = Color(0xFF3694C9),
-                        contentColor = Color.White,
-                    )
-                }
             ) { innerPadding ->
                 Surface(
                     modifier = Modifier

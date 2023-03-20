@@ -5,12 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,20 +18,15 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.*
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -54,7 +47,6 @@ import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import kotlin.properties.Delegates
 
 @Composable
 fun NoteScreen(navController: NavController, noteId : String?) {
@@ -117,26 +109,6 @@ fun NoteScreen(navController: NavController, noteId : String?) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Scaffold(
                     backgroundColor = Color(0xFFEFEFEF),
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(text = activityTitle.value) },
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = {
-                                        navController.popBackStack()
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Filled.ArrowBack,
-                                        contentDescription = "Back",
-                                        modifier = Modifier.padding(14.dp)
-                                    )
-                                }
-                            },
-                            backgroundColor = Color(0xFF3694C9),
-                            contentColor = Color.White,
-                        )
-                    }
                 ) { innerPadding ->
                     Surface(
                         modifier = Modifier
