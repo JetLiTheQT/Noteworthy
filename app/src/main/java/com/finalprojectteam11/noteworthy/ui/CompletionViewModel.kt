@@ -8,16 +8,25 @@ import androidx.lifecycle.viewModelScope
 import com.aallam.openai.api.completion.Choice
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.completion.TextCompletion
+import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.RetryStrategy
 import com.finalprojectteam11.noteworthy.BuildConfig
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import kotlinx.coroutines.launch
-import org.w3c.dom.Text
-
+import kotlin.time.Duration.Companion.seconds
 class CompletionViewModel: ViewModel() {
     private val OPENAI_KEY = BuildConfig.OPENAI_API_KEY
-    private val openAI = OpenAI(OPENAI_KEY)
+
+    private val openAIConfig = OpenAIConfig(
+        token = OPENAI_KEY,
+        timeout = Timeout(socket = 13.seconds),
+        retry = RetryStrategy(maxRetries = 1)
+    )
+
+    private val openAI = OpenAI(openAIConfig)
 
     private val _completionResults = MutableLiveData<TextCompletion>(null)
     val completionResults: LiveData<TextCompletion> = _completionResults
@@ -71,7 +80,7 @@ class CompletionViewModel: ViewModel() {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
-            var prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text and no prepended new lines, unless you are starting a new paragraph: \n" +
+            var prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text and no prepended new lines: \n" +
                     input
 
             val completionRequest = CompletionRequest(
