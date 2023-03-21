@@ -343,15 +343,16 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
             },
             label = { Text("Note Content") },
             visualTransformation = ColorsTransformation(completion.value),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // listen for the Done key event
-            keyboardActions = KeyboardActions(onDone = {
-                // NOT WORKING confused but it's supposed to scroll to the new line
-                coroutineScope.launch {
-                    val cursorLine = cursorPosition / numLines
-                    val scrollPosition = cursorLine * with(density) { lineHeight.toPx() }
-                    scrollState.animateScrollTo(scrollPosition.toInt())
-                }
-            }),
+              // NOT WORKING confused but it's supposed to scroll to the new line
+
+//            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // listen for the Done key event
+//            keyboardActions = KeyboardActions(onDone = {
+//                coroutineScope.launch {
+//                    val cursorLine = cursorPosition / numLines
+//                    val scrollPosition = cursorLine * with(density) { lineHeight.toPx() }
+//                    scrollState.animateScrollTo(scrollPosition.toInt())
+//                }
+//            }),
             modifier = Modifier
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures { change, dragAmount ->

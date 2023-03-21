@@ -9,7 +9,7 @@ android {
     compileSdk 33
 
     defaultConfig {
-        buildConfigField("String", "OPENAI_API_KEY", OPENAI_API_KEY)
+        buildConfigField("String", "OPENAI_API_KEY", "\"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\"")
         applicationId 'com.finalprojectteam11.noteworthy'
         minSdk 24
         targetSdk 33
