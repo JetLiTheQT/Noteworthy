@@ -130,7 +130,7 @@ fun SearchResultItem(result: SearchResult, navController: NavController) {
         },
         secondaryText = {
             Text(
-                text = if (result.content.length > 50) result.content.substring(0, 50) + "..." else result.content,
+                text = if (result.content.length > 70) result.content.substring(0, 67) + "..." else result.content,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
             )

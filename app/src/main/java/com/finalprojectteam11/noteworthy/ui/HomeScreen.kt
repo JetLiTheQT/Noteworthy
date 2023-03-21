@@ -54,14 +54,16 @@ fun MainScreen() {
     val firestoreViewModel = FirestoreViewModel()
     firestoreViewModel.getNotes()
     firestoreViewModel.getPinnedNotes()
+    firestoreViewModel.getCategories()
 
+    var categoriesList = remember { mutableStateListOf<String>() }
     val notesList = remember { mutableStateListOf<Note>() }
     val pinnedNotesList = remember { mutableStateListOf<Note>() }
+    val selectedButtons = remember { mutableStateListOf<Boolean>() }
 
     firestoreViewModel.noteResults.observeForever() {
+        notesList.clear()
         if (it != null) {
-            notesList.clear()
-
             for (document in it) {
                 val note = Note(
                     title = if (document.data!!["title"] == null) "" else document.data!!["title"].toString(),
@@ -76,9 +78,8 @@ fun MainScreen() {
     }
 
     firestoreViewModel.pinnedNoteResults.observeForever() {
+        pinnedNotesList.clear()
         if (it != null) {
-            pinnedNotesList.clear()
-
             for (document in it) {
                 val note = Note(
                     title = if (document.data!!["title"] == null) "" else document.data!!["title"].toString(),
@@ -88,6 +89,16 @@ fun MainScreen() {
                     pinned = if (document.data!!["pinned"] == null) false else document.data!!["pinned"] as Boolean,
                 )
                 pinnedNotesList.add(note)
+            }
+        }
+    }
+
+    firestoreViewModel.categoryResults.observeForever() {
+        categoriesList.clear()
+        selectedButtons.clear()
+        if (it != null) {
+            for (category in it) {
+                categoriesList.add(category)
             }
         }
     }
@@ -125,7 +136,7 @@ fun MainScreen() {
                             )
                         }
                         item {
-                            filterSection()
+                            filterSection(categoriesList, selectedButtons, firestoreViewModel)
                         }
                         item {
                             displayChoice(onDisplayChoiceChange = { newDisplayChoice ->
@@ -133,7 +144,7 @@ fun MainScreen() {
                             })
                         }
                         item {
-                            pinnedNotes(currentDisplayChoice.value, pinnedNotesList)
+                            pinnedNotes(currentDisplayChoice.value, pinnedNotesList, navController)
                         }
                         item {
                             allNotes(currentDisplayChoice.value, notesList, navController)
@@ -157,24 +168,61 @@ fun MainScreen() {
 }
 
 @Composable
-fun FilterButton(text: String) {
+fun FilterButton(text: String, id: Int, selectedButtons: SnapshotStateList<Boolean>, firestoreViewModel: FirestoreViewModel) {
+    val isSelected = selectedButtons[id]
     Button(
-        onClick = { /*TODO*/ },
+        onClick = {
+            // Set all other buttons to false and flip the selected button
+            for (i in selectedButtons.indices) {
+                selectedButtons[i] = false
+            }
+            selectedButtons[id] = !isSelected
+
+            if (selectedButtons[id]) {
+                when (id) {
+                    0 -> {
+                        firestoreViewModel.getNotes(filter = "NW_INTERNAL_AI_ASSIST")
+                        firestoreViewModel.getPinnedNotes(filter = "NW_INTERNAL_AI_ASSIST")
+                    }
+                    1 -> {
+                        firestoreViewModel.getNotes(filter = "NW_INTERNAL_PRIVATE")
+                        firestoreViewModel.getPinnedNotes(filter = "NW_INTERNAL_PRIVATE")
+                    }
+                    2 -> {
+                        firestoreViewModel.getNotes(filter = "NW_INTERNAL_NEW")
+                        firestoreViewModel.getPinnedNotes(filter = "NW_INTERNAL_NEW")
+                    }
+                    else -> {
+                        firestoreViewModel.getNotes(filter = text)
+                        firestoreViewModel.getPinnedNotes(filter = text)
+                    }
+                }
+            } else {
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }
+
+          },
         modifier = Modifier
             .padding(start = 8.dp, end = 4.dp)
             .height(38.dp),
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = Color(0xFFE5E5E5),
+            backgroundColor = if (isSelected) Color.LightGray else Color(0xFFE5E5E5),
             contentColor = Color.Black
         )
+
     ) {
         Text(text = text)
     }
 }
 
 @Composable
-fun filterSection() {
+fun filterSection(
+    categoriesList: List<String>,
+    selectedButtons: SnapshotStateList<Boolean>,
+    firestoreViewModel: FirestoreViewModel
+) {
     Column(modifier = Modifier
         .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
         .fillMaxWidth()) {
@@ -185,18 +233,24 @@ fun filterSection() {
             contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
             content = {
                 item {
-                    FilterButton(text = "AI Assist")
+                    FilterButton(text = "AI Assist", id = 0, selectedButtons, firestoreViewModel)
                 }
                 item {
-                    FilterButton(text = "Private")
+                    FilterButton(text = "Private", id = 1, selectedButtons, firestoreViewModel)
                 }
                 item {
-                    FilterButton(text = "New")
+                    FilterButton(text = "New", id = 2, selectedButtons, firestoreViewModel)
                 }
-                item {
-                    FilterButton(text = "Location")
+                var i = 3
+                categoriesList.forEach {
+                    item {
+                        FilterButton(text = it, id = i, selectedButtons, firestoreViewModel)
+                    }
+                    i++
                 }
-
+                for (a in 0..i) {
+                    selectedButtons.add(false)
+                }
             })
     }
 }
@@ -217,7 +271,11 @@ fun displayChoice(onDisplayChoiceChange: (Boolean) -> Unit) {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun pinnedNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>) {
+fun pinnedNotes(
+    currentDisplayChoice: Boolean,
+    notesList: SnapshotStateList<Note>,
+    navController: NavHostController
+) {
     Column(modifier = Modifier
         .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
         .fillMaxWidth()) {
@@ -243,17 +301,20 @@ fun pinnedNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note
                     .fillMaxWidth(),
                     contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
                     content = {
-//                    items(notesList.size) {
-//                        NoteCard(notesList[it])
-//                    }
-                    })
+                        items(notesList.size) {
+                            NoteCard(notesList[it], navController)
+                        }
+                    }
+                )
             } else {
                 Column(content = {
-//                NoteListItem()
-//                Divider(color = Color.LightGray)
-//                NoteListItem()
-//                Divider(color = Color.LightGray)
-//                NoteListItem()
+
+                    for (note in notesList) {
+                        NoteListItem(note)
+                        if (note != notesList.last()) {
+                            Divider(color = Color.LightGray)
+                        }
+                    }
                 })
             }
         }

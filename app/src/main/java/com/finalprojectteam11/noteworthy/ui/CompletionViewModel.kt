@@ -61,7 +61,6 @@ class CompletionViewModel: ViewModel() {
                 maxTokens = 256,
             )
             val result: TextCompletion = openAI.completion(completionRequest)
-            Log.d("CompletionViewModel", "fetchAction: $result.choices")
             _completionResults.value = result
             _errorMessage.value = result.choices.isEmpty().let {
                 when(it) {

@@ -45,10 +45,7 @@ class AlgoliaViewModel: ViewModel() {
             val result = index.search(query)
             result.hits.deserialize(SearchResult.serializer())
 
-            Log.d("AlgoliaViewModel", "search: ${result.hits}")
-
             _searchResults.value = result
-
             _errorMessage.value = result.hits.isEmpty().let {
                 when(it) {
                     true -> "No results found"

@@ -1,11 +1,13 @@
 package com.finalprojectteam11.noteworthy.ui
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
@@ -24,6 +26,9 @@ class FirestoreViewModel : ViewModel() {
 
     private val _noteResult = MutableLiveData<DocumentSnapshot>(null)
     val noteResult: LiveData<DocumentSnapshot> = _noteResult
+
+    private val _categoryResults = MutableLiveData<List<String>>(null)
+    val categoryResults: LiveData<List<String>> = _categoryResults
 
     private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: LiveData<String?> = _errorMessage
@@ -105,33 +110,171 @@ class FirestoreViewModel : ViewModel() {
         }
     }
 
-    fun getNotes() {
+    fun getNotes(filter: String = "") {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
-            db.collection("notes")
-                .get()
-                .addOnSuccessListener { result ->
-                    _loadingStatus.value = LoadingStatus.SUCCESS
-                    _noteResults.value = result.documents
-                }
-                .addOnFailureListener { exception ->
-                    _loadingStatus.value = LoadingStatus.ERROR
-                    _errorMessage.value = exception.message
-                }
+            if (filter == "NW_INTERNAL_NEW") {
+                db.collection("notes")
+                    .orderBy("time", Query.Direction.DESCENDING)
+                    .limit(5)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _noteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+            else if (filter == "NW_INTERNAL_PRIVATE") {
+                db.collection("notes")
+                    .whereEqualTo("private", true)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _noteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+            else if (filter == "NW_INTERNAL_AI_ASSIST") {
+                db.collection("notes")
+                    .whereNotEqualTo("private", true)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _noteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+            else if (filter != "") {
+                db.collection("notes")
+                    .whereArrayContains("categories", filter)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _noteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            } else {
+                db.collection("notes")
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _noteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
         }
     }
 
-    fun getPinnedNotes() {
+    fun getPinnedNotes(filter: String = "") {
+        viewModelScope.launch {
+            _loadingStatus.value = LoadingStatus.LOADING
+
+            if (filter == "NW_INTERNAL_NEW") {
+                db.collection("notes")
+                    .whereEqualTo("pinned", true)
+                    .orderBy("time", Query.Direction.DESCENDING)
+                    .limit(5)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _pinnedNoteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+            else if (filter == "NW_INTERNAL_PRIVATE") {
+                db.collection("notes")
+                    .whereEqualTo("pinned", true)
+                    .whereEqualTo("private", true)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _pinnedNoteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+            else if (filter == "NW_INTERNAL_AI_ASSIST") {
+                db.collection("notes")
+                    .whereEqualTo("pinned", true)
+                    .whereNotEqualTo("private", true)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _pinnedNoteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+            else if (filter != "") {
+                db.collection("notes")
+                    .whereEqualTo("pinned", true)
+                    .whereArrayContains("categories", filter)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _pinnedNoteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            } else {
+                db.collection("notes")
+                    .whereEqualTo("pinned", true)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        _loadingStatus.value = LoadingStatus.SUCCESS
+                        _pinnedNoteResults.value = result.documents
+                    }
+                    .addOnFailureListener { exception ->
+                        _loadingStatus.value = LoadingStatus.ERROR
+                        _errorMessage.value = exception.message
+                    }
+            }
+        }
+    }
+
+    fun getCategories() {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
             db.collection("notes")
-                .whereEqualTo("pinned", true)
+                .whereNotEqualTo("categories", null)
                 .get()
                 .addOnSuccessListener { result ->
                     _loadingStatus.value = LoadingStatus.SUCCESS
-                    _pinnedNoteResults.value = result.documents
+                    var categories = mutableListOf<String>()
+                    for (document in result) {
+                        for (category in document.data["categories"] as List<String>) {
+                            if (!categories.contains(category)) {
+                                categories.add(category)
+                            }
+                        }
+                    }
+                    _categoryResults.value = categories
                 }
                 .addOnFailureListener { exception ->
                     _loadingStatus.value = LoadingStatus.ERROR

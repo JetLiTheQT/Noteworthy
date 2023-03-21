@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.*
@@ -53,15 +52,6 @@ fun AppNavigator(navController: NavHostController) {
             SearchScreen(navController, backStackEntry.arguments?.getString("query"))
 
         }
-    }
-}
-
-fun getTitleForScreen(screen: Screen): String {
-    return when (screen) {
-        is Screen.Home -> "Noteworthy"
-        is Screen.AddNote -> "Add New Note"
-        is Screen.Settings -> "Settings"
-        else -> {""}
     }
 }
 

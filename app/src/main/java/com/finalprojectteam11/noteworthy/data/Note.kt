@@ -7,5 +7,6 @@ data class Note(
     val time: String,
     val id: String = "",
     val pinned: Boolean = false,
+    val private: Boolean = false,
     val categories: List<String> = listOf()
 )
