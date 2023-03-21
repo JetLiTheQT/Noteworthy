@@ -60,8 +60,8 @@ fun FloatingActionButton(navController: NavController){
     if (navController.currentBackStackEntryAsState().value?.destination?.route == Screen.Home.route) {
         FloatingActionButton(
             onClick = { navController.navigate(Screen.AddNote.route) },
-            backgroundColor = Color(0xFF3694C9),
-            contentColor = Color.White,
+            //backgroundColor = Color(0xFF3694C9),
+            //contentColor = Color.White,
             modifier = Modifier
                 .padding(16.dp)
                 .size(72.dp),
@@ -97,8 +97,8 @@ fun TopNavBar (navController: NavHostController) {
                 }
             }
         } else null,
-        backgroundColor = Color(0xFF3694C9),
-        contentColor = Color.White
+        //backgroundColor = Color(0xFF3694C9),
+        //contentColor = Color.White
     )
 }
 
@@ -110,8 +110,8 @@ fun BottomNavBar(navController: NavHostController) {
     if (currentRoute == Screen.Home.route) {
         BottomAppBar(
             cutoutShape = CircleShape,
-            contentColor = Color(0xFF3694C9),
-            backgroundColor = Color.Transparent,
+            //contentColor = Color(0xFF3694C9),
+           // backgroundColor = Color.Transparent,
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(0.dp),
@@ -121,8 +121,8 @@ fun BottomNavBar(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(0.dp),
-                contentColor = Color(0xFF3694C9),
-                backgroundColor = Color(0xFFFFFFFF),
+                //contentColor = Color(0xFF3694C9),
+                //backgroundColor = Color(0xFFFFFFFF),
                 elevation = 0.dp // Remove elevation to avoid multiple layers
             ) {
                 items.forEach { screen ->
@@ -151,8 +151,8 @@ fun BottomNavBar(navController: NavHostController) {
                                 launchSingleTop = true
                             }
                         },
-                        selectedContentColor = Color.Black,
-                        unselectedContentColor = Color.Gray,
+                        //selectedContentColor = Color.Black,
+                        //unselectedContentColor = Color.Gray,
                     )
                 }
             }

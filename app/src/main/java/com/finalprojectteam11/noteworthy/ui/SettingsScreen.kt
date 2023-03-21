@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
@@ -31,55 +30,53 @@ fun SettingsScreen(navController: NavHostController) {
     val selectedLanguage = remember { mutableStateOf(selectedLanguageValue) }
     val selectedSortBy = remember { mutableStateOf(selectedSortByValue) }
 
-    MyApplicationTheme {
-        Scaffold {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Account Info",
-                    style = MaterialTheme.typography.h6,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "Name: John Doe",
-                    style = MaterialTheme.typography.body1,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "Email: JohnDoe@example.com",
-                    style = MaterialTheme.typography.body1,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+    Scaffold {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Account Info",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Name: John Doe",
+                style = MaterialTheme.typography.body1,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Email: JohnDoe@example.com",
+                style = MaterialTheme.typography.body1,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "Languages",
-                    style = MaterialTheme.typography.h6,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            Text(
+                text = "Languages",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-                RadioGroup(
-                    options = languageOptions,
-                    selectedOption = selectedLanguage.value,
-                    onOptionSelected = { option -> selectedLanguage.value = option }
-                )
+            RadioGroup(
+                options = languageOptions,
+                selectedOption = selectedLanguage.value,
+                onOptionSelected = { option -> selectedLanguage.value = option }
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "Sort by",
-                    style = MaterialTheme.typography.h6,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            Text(
+                text = "Sort by",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-                RadioGroup(
-                    options = sortByOptions,
-                    selectedOption = selectedSortBy.value,
-                    onOptionSelected = { option -> selectedSortBy.value = option }
-                )
-            }
+            RadioGroup(
+                options = sortByOptions,
+                selectedOption = selectedSortBy.value,
+                onOptionSelected = { option -> selectedSortBy.value = option }
+            )
         }
     }
     SaveSettingsOnDispose(selectedLanguage, selectedSortBy)

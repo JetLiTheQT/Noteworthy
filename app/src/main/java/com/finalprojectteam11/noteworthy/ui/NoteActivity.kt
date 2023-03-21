@@ -43,7 +43,7 @@ import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.ui.theme.CompletionViewModel
-import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
+import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -105,44 +105,43 @@ fun NoteScreen(navController: NavController, noteId : String?) {
             }
         }
     }
-        MyApplicationTheme {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Scaffold(
-                    backgroundColor = Color(0xFFEFEFEF),
-                ) { innerPadding ->
-                    Surface(
-                        modifier = Modifier
-                            .padding(innerPadding),
-                        color = Color(0xFFEFEFEF),
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(0.dp)
-                        ) {
-                            item {
-                                ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
-                            }
-                            item {
-                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion)
-                            }
-                            item {
-                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, activityTitle)
-                            }
-                            item {
-                                Spacer(modifier = Modifier.height(50.dp))
-                            }
-                        }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            //backgroundColor = Color(0xFFEFEFEF),
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .padding(innerPadding),
+                //color = Color(0xFFEFEFEF),
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    item {
+                        ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
+                    }
+                    item {
+                        TextInputBox(noteTextField, noteText, completionText, changedByCompletion)
+                    }
+                    item {
+                        NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, activityTitle)
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(50.dp))
+                    }
                 }
             }
-                // Position the SnackbarHost at the top
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(top = 1.dp)
-                )
         }
+        // Position the SnackbarHost at the top
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(top = 1.dp)
+        )
     }
 }
 
@@ -162,7 +161,7 @@ fun ComposeNote(
                 text = "Enter Note Title",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                color = Color.Black
+                //color = Color.Black
             )
         },
         modifier = Modifier
@@ -181,7 +180,7 @@ fun ComposeNote(
         ),
         textStyle = TextStyle(
             fontSize = 18.sp,
-            color = Color.Black,
+            //color = Color.Black,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold
         ),
@@ -223,7 +222,7 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
             .fillMaxWidth()
             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
             .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp))
-            .background(Color(0xFFE5E5E5))
+            //.background(Color(0xFFE5E5E5))
             .height(300.dp) // Set a fixed height for the Box
     ) {
         TextField(
@@ -395,14 +394,14 @@ fun NoteControls(launcher: ActivityResultLauncher<Intent>, snackbarHostState: Sn
     Divider(modifier = Modifier
         .fillMaxWidth()
         .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
-        color = Color.LightGray
+        //color = Color.LightGray
     )
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
             .clip(RoundedCornerShape(0.dp, 0.dp, 10.dp, 10.dp))
-            .background(Color(0xFFE5E5E5)),
+            //.background(Color(0xFFE5E5E5)),
     ) {
         IconButton(onClick = {
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -449,9 +448,8 @@ fun NoteControls(launcher: ActivityResultLauncher<Intent>, snackbarHostState: Sn
                 }
              },
             shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp),
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
-                ,
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF3694C9), contentColor = Color.White)
+            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            //colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF3694C9), contentColor = Color.White)
 
         ) {
             Text("Save")
@@ -522,10 +520,10 @@ fun buildAnnotatedStringWithColors(text:String, completion: String): AnnotatedSt
         builder.append(" ")
         // Append right arrow with border
         builder.withStyle(style = SpanStyle(
-            color = Color.Gray,
-            background = Color.LightGray,
+            //color = Color.Gray,
+            //background = Color.LightGray,
             shadow = Shadow(
-                color = Color.Gray,
+                //color = Color.Gray,
                 offset = Offset(1f, 1f),
                 blurRadius = 1f
             ),

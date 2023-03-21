@@ -20,7 +20,7 @@ import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.data.SearchResult
 import com.finalprojectteam11.noteworthy.ui.theme.AlgoliaViewModel
-import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
+import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 
 @Composable
 fun SearchScreen(navController: NavController, query : String?) {
@@ -51,37 +51,36 @@ fun SearchScreen(navController: NavController, query : String?) {
         }
     }
 
-    MyApplicationTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                backgroundColor = Color(0xFFEFEFEF),
-            ) { innerPadding ->
-                Surface(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            //backgroundColor = Color(0xFFEFEFEF),
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .padding(innerPadding),
+                //color = Color(0xFFEFEFEF),
+            ) {
+                LazyColumn(
                     modifier = Modifier
-                        .padding(innerPadding),
-                    color = Color(0xFFEFEFEF),
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
-                    ) {
-                        item {
-                            SearchResults(navController = navController, searchResults)
-                        }
+                    item {
+                        SearchResults(navController = navController, searchResults)
                     }
                 }
             }
-            // Position the SnackbarHost at the top
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(top = 1.dp)
-            )
         }
+        // Position the SnackbarHost at the top
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(top = 1.dp)
+        )
     }
 }
+
 
 
 @Composable
@@ -104,7 +103,7 @@ fun SearchResults(navController: NavController, algoliaResults: List<SearchResul
                     SearchResultItem(result, navController)
                     if (algoliaResults.indexOf(result) != algoliaResults.size - 1) {
                         Divider(
-                            color = Color(0xFFE5E5E5),
+                            //color = Color(0xFFE5E5E5),
                             thickness = 1.dp,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
