@@ -33,7 +33,10 @@ fun SearchScreen(navController: NavController, query : String?) {
     val focusManager = LocalFocusManager.current
     val algoliaViewModel = AlgoliaViewModel()
     val searchResults = remember { mutableStateListOf<SearchResult>() }
-
+    var currentLoadingStatus = LoadingStatus.SUCCESS
+    algoliaViewModel.loadingStatus.observeForever {
+        currentLoadingStatus = it
+    }
     if (query == null || query == "") {
         navController.popBackStack()
     } else {
@@ -81,6 +84,10 @@ fun SearchScreen(navController: NavController, query : String?) {
                 .padding(top = 1.dp)
         )
     }
+    if (currentLoadingStatus == LoadingStatus.LOADING) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }}
 }
 
 

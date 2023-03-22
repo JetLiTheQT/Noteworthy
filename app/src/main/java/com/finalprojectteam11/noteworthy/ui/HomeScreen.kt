@@ -352,6 +352,10 @@ fun pinnedNotes(
 
 @Composable
 fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel) {
+    var currentLoadingStatus = LoadingStatus.SUCCESS
+    firestoreViewModel.loadingStatus.observeForever {
+        currentLoadingStatus = it
+    }
     Column(
         modifier = Modifier
             .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
@@ -363,35 +367,44 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp)
         )
-
-        if (notesList.isEmpty()) {
-            Text(
-                text = "No notes found.\nPress the pencil button to add a note.",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
-            )
-        } else {
-            if (!currentDisplayChoice) {
-                LazyRow(modifier = Modifier
-                    .padding(top = 16.dp)
-                    .fillMaxWidth(),
-                    contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
-                    content = {
-                        items(notesList.size) {
-                            NoteCard(notesList[it], navController, snackbarHostState, firestoreViewModel)
-                        }
-                    }
+        if (currentLoadingStatus == LoadingStatus.LOADING) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }}else {
+            if (notesList.isEmpty()) {
+                Text(
+                    text = "No notes found.\nPress the pencil button to add a note.",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
                 )
             } else {
-                Column(content = {
-                    for (note in notesList) {
-                        NoteListItem(note, navController, firestoreViewModel,snackbarHostState)
-                        if (note != notesList.last()) {
-                            Divider()
+                if (!currentDisplayChoice) {
+                    LazyRow(modifier = Modifier
+                        .padding(top = 16.dp)
+                        .fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
+                        content = {
+                            items(notesList.size) {
+                                NoteCard(
+                                    notesList[it],
+                                    navController,
+                                    snackbarHostState,
+                                    firestoreViewModel
+                                )
+                            }
                         }
-                    }
-                })
+                    )
+                } else {
+                    Column(content = {
+                        for (note in notesList) {
+                            NoteListItem(note, navController, firestoreViewModel, snackbarHostState)
+                            if (note != notesList.last()) {
+                                Divider()
+                            }
+                        }
+                    })
+                }
             }
         }
     }
