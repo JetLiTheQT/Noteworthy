@@ -63,6 +63,19 @@ fun MainScreen() {
     val pinnedNotesList = remember { mutableStateListOf<Note>() }
     val selectedButtons = remember { mutableStateListOf<Boolean>() }
 
+    // Update the notes list when the settings are changed
+    LaunchedEffect(AppSettings.settingsUpdated) {
+        AppSettings.settingsUpdated.observeForever { updated ->
+            if (updated) {
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+                firestoreViewModel.getCategories()
+
+                AppSettings.resetSettingsUpdatedFlag()
+            }
+        }
+    }
+
     firestoreViewModel.noteResults.observeForever {
         notesList.clear()
         if (it != null) {

@@ -11,4 +11,5 @@ class SharedViewModel : ViewModel() {
     fun updateTitle(title: String) {
         _appBarTitle.value = title
     }
+
 }

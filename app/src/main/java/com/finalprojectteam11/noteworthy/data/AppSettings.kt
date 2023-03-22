@@ -2,6 +2,8 @@ package com.finalprojectteam11.noteworthy.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.preference.PreferenceManager
 
 object AppSettings {
@@ -12,6 +14,9 @@ object AppSettings {
 
 
     private lateinit var sharedPreferences: SharedPreferences
+
+    private val _settingsUpdated = MutableLiveData<Boolean>()
+    val settingsUpdated: LiveData<Boolean> get() = _settingsUpdated
 
     fun init(context: Context) {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -32,4 +37,12 @@ object AppSettings {
     var displayChoice: Boolean
         get() = sharedPreferences.getBoolean(DISPLAY_CHOICE_KEY, false)
         set(value) = sharedPreferences.edit().putBoolean(DISPLAY_CHOICE_KEY, value).apply()
+
+    fun updateSettings() {
+        _settingsUpdated.value = true
+    }
+
+    fun resetSettingsUpdatedFlag() {
+        _settingsUpdated.value = false
+    }
 }

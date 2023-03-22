@@ -94,6 +94,7 @@ fun SaveSettingsOnDispose(selectedLanguage: MutableState<String>, selectedSortBy
             AppSettings.selectedLanguage = selectedLanguage.value
             AppSettings.selectedSortBy = selectedSortBy.value
             AppSettings.selectedQueryDirection = selectedQueryDirection.value
+            AppSettings.updateSettings()
         }
     }
 }
