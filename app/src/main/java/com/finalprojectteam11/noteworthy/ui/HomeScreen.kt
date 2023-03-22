@@ -365,7 +365,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
         if (currentLoadingStatus == LoadingStatus.LOADING) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
-            }}else {
+            }}
             if (notesList.isEmpty()) {
                 Text(
                     text = "No notes found.\nPress the pencil button to add a note.",
@@ -400,7 +400,6 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                         }
                     })
                 }
-            }
         }
     }
 }
