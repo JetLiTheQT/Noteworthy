@@ -476,7 +476,6 @@ fun NoteControls(
     notePrivate: MutableState<Boolean>,
     firestoreViewModel: FirestoreViewModel
 ) {
-    val firestoreViewModel = FirestoreViewModel()
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

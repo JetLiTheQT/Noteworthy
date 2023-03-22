@@ -32,7 +32,7 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewModel) {
+fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewModel, firestoreViewModel: FirestoreViewModel) {
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) { HomeScreen(navController) }
         composable(Screen.AddNote.route) { NoteScreen(navController, sharedViewModel, "")  }
@@ -58,7 +58,7 @@ fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewMo
             SearchScreen(navController, backStackEntry.arguments?.getString("query"))
 
         }
-        composable(Screen.Profile.route) { ProfileScreen(navController) }
+        composable(Screen.Profile.route) { ProfileScreen(navController, firestoreViewModel) }
 
         composable(Screen.Contact.route) { ContactScreen(navController) }
 
