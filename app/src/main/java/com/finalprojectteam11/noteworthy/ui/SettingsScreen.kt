@@ -1,9 +1,6 @@
 package com.finalprojectteam11.noteworthy.ui
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.SharedPreferences
-import android.preference.PreferenceManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -21,12 +18,12 @@ import java.util.*
 fun SettingsScreen(navController: NavHostController) {
     val context = LocalContext.current
 //    val languageOptions = listOf("English", "Spanish", "French")
-    val sortByOptions = listOf("title", "time")
-    val queryDirectionOptions = listOf("ASCENDING", "DESCENDING")
+    val sortByOptions = listOf("Name (A-Z)", "Name (Z-A)", "Date (Newest-Oldest)", "Date (Oldest-Newest)")
+    val displayOptions = listOf("List", "Grid")
 
 //    val selectedLanguage = remember { mutableStateOf(AppSettings.selectedLanguage) }
     val selectedSortBy = remember { mutableStateOf(AppSettings.selectedSortBy) }
-    val selectedQueryDirection = remember { mutableStateOf(AppSettings.selectedQueryDirection) }
+    val displayPreferences = remember { mutableStateOf(AppSettings.displayChoice) }
 
 
     Scaffold {
@@ -39,6 +36,19 @@ fun SettingsScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            Text(
+                text = "Display Preference",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            RadioGroup(
+                options = displayOptions,
+                selectedOption = if (displayPreferences.value) "List" else "Grid",
+                onOptionSelected = { option ->
+                    displayPreferences.value = option == "List"
+                }
+            )
 
             Text(
                 text = "Sort by",
@@ -46,58 +56,23 @@ fun SettingsScreen(navController: NavHostController) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-//            RadioGroup(
-//                options = sortByOptions,
-//                selectedOption = selectedSortBy.value,
-//                onOptionSelected = { option ->
-//                    when(option){
-//                        "Name (A-Z)" -> {
-//                            selectedSortBy.value = "title"
-//                            selectedQueryDirection.value = "DESCENDING"
-//                        }
-//                        "Name (Z-A)" -> {
-//                            selectedSortBy.value = "title"
-//                            selectedQueryDirection.value = "ASCENDING"
-//                        }
-//                        "Date (Newest-Oldest)" -> {
-//                            selectedSortBy.value = "time"
-//                            selectedQueryDirection.value = "DESCENDING"
-//                            }
-//                        "Date (Oldest-Newest)" -> {
-//                            selectedSortBy.value = "time"
-//                            selectedQueryDirection.value = "ASCENDING"
-//                        }
-//                        "Default" -> {
-//                            selectedSortBy.value = "title"
-//                            selectedQueryDirection.value = "DESCENDING"
-//                        }
-//                    }
-//                }
-//            )
-
             RadioGroup(
                 options = sortByOptions,
-                selectedOption = selectedSortBy.value,
+                selectedOption = if (selectedSortBy.value != "") selectedSortBy.value else "Date (Newest-Oldest)",
                 onOptionSelected = { option -> selectedSortBy.value = option }
-            )
-
-            RadioGroup(
-                options = queryDirectionOptions,
-                selectedOption = selectedQueryDirection.value,
-                onOptionSelected = { option -> selectedQueryDirection.value = option }
             )
         }
     }
-    SaveSettingsOnDispose(selectedSortBy, selectedQueryDirection)
+    SaveSettingsOnDispose(selectedSortBy, displayPreferences)
 }
 
 @Composable
-fun SaveSettingsOnDispose(selectedSortBy: MutableState<String>, selectedQueryDirection: MutableState<String>) {
+fun SaveSettingsOnDispose(selectedSortBy: MutableState<String>, displayPreferences: MutableState<Boolean>) {
     val context = LocalContext.current
     DisposableEffect(Unit) {
         onDispose {
             AppSettings.selectedSortBy = selectedSortBy.value
-            AppSettings.selectedQueryDirection = selectedQueryDirection.value
+            AppSettings.displayChoice = displayPreferences.value
             AppSettings.updateSettings()
         }
     }

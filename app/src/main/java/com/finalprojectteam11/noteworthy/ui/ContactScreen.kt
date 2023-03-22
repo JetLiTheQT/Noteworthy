@@ -37,7 +37,7 @@ fun ContactScreen(navController: NavHostController) {
     val contactList = listOf(
         Contact(name = "Carter Roeser - API Integration", email = "roeserc@oregonstate.edu"),
         Contact(name = "Ekkachai Jet Ittihrit - UI/UX",email = "ittihrie@oregonstate.edu"),
-        Contact(name = "K-Concept - UI/UX",email = "marquekr@oregonstate.edu")
+        Contact(name = "Kristina Marquez - UI/UX",email = "marquekr@oregonstate.edu")
     )
 
     Scaffold(

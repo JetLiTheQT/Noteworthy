@@ -180,11 +180,16 @@ fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -
             .clip(RoundedCornerShape(10.dp))
             .focusRequester(focusRequester),
         colors = TextFieldDefaults.textFieldColors(
-            textColor = MaterialTheme.colors.onSurface,
+            textColor = MaterialTheme.colors.onPrimary,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
-            backgroundColor = MaterialTheme.colors.surface
+            backgroundColor = MaterialTheme.colors.primary,
+            cursorColor = MaterialTheme.colors.onPrimary,
+            focusedLabelColor = MaterialTheme.colors.onPrimary,
+            unfocusedLabelColor = MaterialTheme.colors.onPrimary,
+
+
         ),
     )
     LaunchedEffect(focusRequester) {
