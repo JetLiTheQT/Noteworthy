@@ -137,7 +137,10 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
                 }
             }
         } else if (!canGoBack) {{
-            IconButton(onClick = { navController.navigate(Screen.Home.route) }){
+            IconButton(onClick = { navController.navigate(Screen.Home.route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            } }){
                 Icon(painter = painterResource(id = R.mipmap.ic_launcher_foreground), contentDescription = "Icon")
             }
         }}
