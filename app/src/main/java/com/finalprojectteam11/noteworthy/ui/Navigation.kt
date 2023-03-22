@@ -24,7 +24,11 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object EditNote : Screen("edit_note/{note_id}")
     object Search: Screen("search/{query}")
+    object Profile: Screen("profile")
+
+    object Contact: Screen("contact")
 }
+
 @Composable
 fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewModel) {
     NavHost(navController = navController, startDestination = Screen.Home.route) {
@@ -52,6 +56,9 @@ fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewMo
             SearchScreen(navController, backStackEntry.arguments?.getString("query"))
 
         }
+        composable(Screen.Profile.route) { ProfileScreen(navController) }
+
+        composable(Screen.Contact.route) { ContactScreen(navController) }
     }
 }
 
@@ -92,6 +99,8 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
             Screen.Settings.route -> "Settings"
             Screen.EditNote.route -> "Edit Note"
             Screen.Search.route -> "Search Results"
+            Screen.Contact.route -> "Contact Us"
+            Screen.Profile.route -> "Your Profile"
             else -> "Noteworthy"
         }
     }

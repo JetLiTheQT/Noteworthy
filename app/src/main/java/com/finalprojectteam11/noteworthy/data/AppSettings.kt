@@ -22,10 +22,6 @@ object AppSettings {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     }
 
-    var selectedLanguage: String
-        get() = sharedPreferences.getString(SELECTED_LANGUAGE_KEY, "English") ?: "English"
-        set(value) = sharedPreferences.edit().putString(SELECTED_LANGUAGE_KEY, value).apply()
-
     var selectedSortBy: String
         get() = sharedPreferences.getString(SELECTED_SORT_BY_KEY, "time") ?: "time"
         set(value) = sharedPreferences.edit().putString(SELECTED_SORT_BY_KEY, value).apply()
