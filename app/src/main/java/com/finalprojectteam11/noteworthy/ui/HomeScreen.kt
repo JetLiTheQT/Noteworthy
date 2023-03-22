@@ -627,6 +627,7 @@ fun NoteCard(note: Note, navController: NavController, snackbarHostState: Snackb
             DropdownMenuItem(onClick = {
                 selectedNote.value = note.id
                 openDialog.value = true
+                showPopupMenu.value = false
             }) {
                 Text("Edit Category")
             }
@@ -737,6 +738,7 @@ fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: F
             DropdownMenuItem(onClick = {
                 selectedNote.value = note.id
                 openDialog.value = true
+                showPopupMenu.value = false
             }) {
                 Text("Edit Category")
             }
