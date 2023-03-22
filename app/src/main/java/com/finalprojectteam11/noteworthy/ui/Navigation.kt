@@ -1,5 +1,6 @@
 package com.finalprojectteam11.noteworthy.ui
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,7 +11,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
@@ -26,10 +26,10 @@ sealed class Screen(val route: String) {
     object Search: Screen("search/{query}")
 }
 @Composable
-fun AppNavigator(navController: NavHostController) {
+fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewModel) {
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) { HomeScreen(navController) }
-        composable(Screen.AddNote.route) { NoteScreen(navController, "")  }
+        composable(Screen.AddNote.route) { NoteScreen(navController, sharedViewModel, "")  }
         composable(Screen.Settings.route) { SettingsScreen(navController) }
         composable(
             Screen.EditNote.route,
@@ -39,7 +39,7 @@ fun AppNavigator(navController: NavHostController) {
                 },
             )
         ) { backStackEntry ->
-            NoteScreen(navController, backStackEntry.arguments?.getString("note_id"))
+            NoteScreen(navController, sharedViewModel, backStackEntry.arguments?.getString("note_id"))
         }
         composable(
             Screen.Search.route,
@@ -60,8 +60,6 @@ fun FloatingActionButton(navController: NavController){
     if (navController.currentBackStackEntryAsState().value?.destination?.route == Screen.Home.route) {
         FloatingActionButton(
             onClick = { navController.navigate(Screen.AddNote.route) },
-            //backgroundColor = Color(0xFF3694C9),
-            //contentColor = Color.White,
             modifier = Modifier
                 .padding(2.dp)
                 .size(72.dp),
@@ -78,18 +76,28 @@ fun FloatingActionButton(navController: NavController){
 
 
 @Composable
-fun TopNavBar (navController: NavHostController) {
+fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewModel) {
     val canGoBack = navController.previousBackStackEntry != null
-    val appBarTitle = when (navController.currentBackStackEntry?.destination?.route) {
-        Screen.AddNote.route -> "Add Note"
-        Screen.Settings.route -> "Settings"
-        Screen.EditNote.route -> "Edit Note"
-        Screen.Search.route -> "Search Results"
-        else -> "Noteworthy"
-    }
 
+    var title by remember { mutableStateOf("") }
+
+    sharedViewModel.appBarTitle.observeForever() {
+        Log.d("TAG", "TopNavBar: $it")
+        title = when (navController.currentBackStackEntry?.destination?.route) {
+            Screen.AddNote.route -> if (it != "") {
+                it
+            } else {
+                "Add Note"
+            }
+            Screen.Settings.route -> "Settings"
+            Screen.EditNote.route -> "Edit Note"
+            Screen.Search.route -> "Search Results"
+            else -> "Noteworthy"
+        }
+    }
+    
     TopAppBar(
-        title = { Text(appBarTitle) },
+        title = { Text(title) },
         navigationIcon = if (canGoBack) {
             {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -97,8 +105,6 @@ fun TopNavBar (navController: NavHostController) {
                 }
             }
         } else null,
-        //backgroundColor = Color(0xFF3694C9),
-        //contentColor = Color.White
     )
 }
 
@@ -110,8 +116,6 @@ fun BottomNavBar(navController: NavHostController) {
     if (currentRoute == Screen.Home.route) {
         BottomAppBar(
             cutoutShape = CircleShape,
-            //contentColor = Color(0xFF3694C9),
-           // backgroundColor = Color.Transparent,
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(0.dp),
@@ -121,8 +125,6 @@ fun BottomNavBar(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(0.dp),
-                //contentColor = Color(0xFF3694C9),
-                //backgroundColor = Color(0xFFFFFFFF),
                 elevation = 0.dp // Remove elevation to avoid multiple layers
             ) {
                 items.forEach { screen ->
@@ -151,8 +153,6 @@ fun BottomNavBar(navController: NavHostController) {
                                 launchSingleTop = true
                             }
                         },
-                        //selectedContentColor = Color.Black,
-                        //unselectedContentColor = Color.Gray,
                     )
                 }
             }

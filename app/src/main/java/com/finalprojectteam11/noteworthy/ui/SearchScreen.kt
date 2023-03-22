@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
@@ -19,8 +18,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.data.SearchResult
-import com.finalprojectteam11.noteworthy.ui.theme.AlgoliaViewModel
-import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 
 @Composable
 fun SearchScreen(navController: NavController, query : String?) {
@@ -40,7 +37,7 @@ fun SearchScreen(navController: NavController, query : String?) {
             focusManager.clearFocus()
             algoliaViewModel.search(searchQuery.value)
 
-            algoliaViewModel.loadingStatus.observeForever() {
+            algoliaViewModel.loadingStatus.observeForever {
                 if (it == LoadingStatus.SUCCESS) {
                     searchResults.clear()
                     for(i in algoliaViewModel.searchResults.value!!.hits) {
@@ -52,9 +49,7 @@ fun SearchScreen(navController: NavController, query : String?) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            //backgroundColor = Color(0xFFEFEFEF),
-        ) { innerPadding ->
+        Scaffold { innerPadding ->
             Surface(
                 modifier = Modifier
                     .padding(innerPadding),
@@ -104,7 +99,6 @@ fun SearchResults(navController: NavController, algoliaResults: List<SearchResul
                     SearchResultItem(result, navController)
                     if (algoliaResults.indexOf(result) != algoliaResults.size - 1) {
                         Divider(
-                            //color = Color(0xFFE5E5E5),
                             thickness = 1.dp,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )

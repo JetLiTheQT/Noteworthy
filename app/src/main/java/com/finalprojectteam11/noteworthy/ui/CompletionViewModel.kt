@@ -1,11 +1,10 @@
-package com.finalprojectteam11.noteworthy.ui.theme
+package com.finalprojectteam11.noteworthy.ui
 
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aallam.openai.api.completion.Choice
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.completion.TextCompletion
 import com.aallam.openai.api.http.Timeout
@@ -37,7 +36,7 @@ class CompletionViewModel: ViewModel() {
     private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: LiveData<String?> = _errorMessage
 
-    private val _loadingStatus = MutableLiveData<LoadingStatus>(LoadingStatus.SUCCESS)
+    private val _loadingStatus = MutableLiveData(LoadingStatus.SUCCESS)
     val loadingStatus: LiveData<LoadingStatus> = _loadingStatus
 
     fun fetchAction(input: String) {
@@ -45,7 +44,7 @@ class CompletionViewModel: ViewModel() {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
-            var prompt = "You are a note taking app on an android phone. " +
+            val prompt = "You are a note taking app on an android phone. " +
                     "As the user is adding notes, you should try to suggest the single most helpful actionable item the user can take relating to their note. " +
                     "This action will be shown in the note taking app underneath the current note as a button that the user can click to execute the action, or read your response, the action should be able to be completed on the user's phone. " +
                     "Common actions should include searching, defining, or translating an important term, adding alarms for important reminders, opening a location in maps or weather, calling a phone number or emailing an address in the note, summarizing the note, or suggesting relevant information that can add to or build upon the note, such as suggesting a recipe if the note contains an ingredient list. " +
@@ -95,7 +94,7 @@ class CompletionViewModel: ViewModel() {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
-            var prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text and no prepended new lines: \n" +
+            val prompt = "Please provide up to 100 characters of autocompletion for the following text, responding with only the additional completion text and no prepended new lines: \n" +
                     input
 
             val completionRequest = CompletionRequest(
