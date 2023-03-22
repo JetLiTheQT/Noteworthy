@@ -378,6 +378,8 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun NoteCard(note: Note, navController: NavController) {
+    val showPopupMenu = remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .padding(start = 8.dp, end = 8.dp)
@@ -389,7 +391,7 @@ fun NoteCard(note: Note, navController: NavController) {
                     navController.navigate("edit_note/" + note.id)
                 },
                 onLongClick = {
-                    // Show action menu
+                    showPopupMenu.value = true
                 }
             ),
         shape = RoundedCornerShape(20.dp),
@@ -408,6 +410,25 @@ fun NoteCard(note: Note, navController: NavController) {
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
             )
+        }
+    }
+
+    DropdownMenu(
+        expanded = showPopupMenu.value,
+        onDismissRequest = { showPopupMenu.value = false },
+        modifier = Modifier.wrapContentSize(Alignment.TopStart)
+    ) {
+        DropdownMenuItem(onClick = {
+            // TODO: add action for pinning/unpinning the note
+            showPopupMenu.value = false
+        }) {
+            Text(if (note.pinned) "Unpin" else "Pin")
+        }
+        DropdownMenuItem(onClick = {
+            // TODO: add action for deleting the note
+            showPopupMenu.value = false
+        }) {
+            Text("Delete")
         }
     }
 }

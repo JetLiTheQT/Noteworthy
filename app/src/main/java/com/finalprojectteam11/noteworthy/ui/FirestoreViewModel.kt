@@ -146,7 +146,10 @@ class FirestoreViewModel : ViewModel() {
 
             val query = getFilteredNotesQuery(filter)
                 .whereEqualTo("pinned", true)
-                //.orderBy(AppSettings.selectedSortBy, queryDirection)
+                /* TODO: fix .orderBy(AppSettings.selectedSortBy, queryDirection)
+                 Can't .oderBY with .whereEqualTo because of index issue
+                 Error: W/Firestore: (24.4.4) [Firestore]: Listen for Query(target=Query(notes where pinned==true order by title, __name__);limitType=LIMIT_TO_FIRST) failed: Status{code=FAILED_PRECONDITION, description=The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/noteworthy-380903/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9ub3Rld29ydGh5LTM4MDkwMy9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvbm90ZXMvaW5kZXhlcy9fEAEaCgoGcGlubmVkEAEaCQoFdGl0bGUQARoMCghfX25hbWVfXxAB, cause=null}
+                 */
 
             query.get()
                 .addOnSuccessListener { result ->
