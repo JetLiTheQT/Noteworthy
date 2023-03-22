@@ -1,10 +1,17 @@
 package com.finalprojectteam11.noteworthy.ui
 
 import android.app.Activity
+import android.app.SearchManager
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.AlarmClock
+import android.provider.CalendarContract
 import android.speech.RecognizerIntent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,13 +22,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -39,14 +46,17 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.R
+import com.finalprojectteam11.noteworthy.data.AssistAction
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.ui.theme.CompletionViewModel
 import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import java.util.Calendar
 
 @Composable
 fun NoteScreen(navController: NavController, noteId : String?) {
@@ -58,10 +68,14 @@ fun NoteScreen(navController: NavController, noteId : String?) {
     val snackbarHostState = remember { SnackbarHostState() }
     val currentNoteID = remember { mutableStateOf("") }
     val activityTitle =  remember { mutableStateOf("Add Note") }
+    var action by remember { mutableStateOf(AssistAction()) }
+    var actionGenerated = remember { mutableStateOf(false) }
 
     if (noteId != null && noteId != "") {
         var firestoreViewModel = FirestoreViewModel()
         firestoreViewModel.getNote(noteId)
+
+        var completionViewModel = CompletionViewModel()
 
         // once the completion is fetched, update the completion state
         firestoreViewModel.noteResult.observeForever() {
@@ -71,6 +85,42 @@ fun NoteScreen(navController: NavController, noteId : String?) {
                 searchQuery = it.data?.get("title").toString()
                 noteTextField.value = TextFieldValue(noteText.value)
                 activityTitle.value = "Edit Note"
+                completionViewModel.fetchAction(noteText.value)
+            }
+        }
+
+        completionViewModel.actionResults.observeForever() {
+            if (!actionGenerated.value) {
+                if (it != null) {
+                    if (it.choices.isNotEmpty()) {
+                        actionGenerated.value = true
+                        val actionJSON = it.choices[0].text.substringAfter("{").substringBeforeLast("}")
+                        val actionJSONString = "{$actionJSON}"
+
+                        // Get last double quote in JSON string and remove trailing comma if present
+                        val lastQuoteIndex = actionJSONString.lastIndexOf("\"")
+                        val actionJSONStringFixed = if (actionJSONString[lastQuoteIndex - 1] == ',') {
+                            actionJSONString.substring(0, lastQuoteIndex - 1) + actionJSONString.substring(lastQuoteIndex)
+                        } else {
+                            actionJSONString
+                        }
+
+                        try {
+                            val json = Json {
+                                ignoreUnknownKeys = true
+                                coerceInputValues = true
+                            }
+
+                            action = json.decodeFromString(actionJSONStringFixed)
+                            Log.d("JSON", action.toString())
+                            loadActionIntents(action)
+
+                        } catch (e: Exception) {
+                            Log.d("JSON", "Error parsing JSON")
+                            Log.d("JSON", e.toString())
+                        }
+                    }
+                }
             }
         }
     }
@@ -124,10 +174,10 @@ fun NoteScreen(navController: NavController, noteId : String?) {
                                 ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
                             }
                             item {
-                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion)
+                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated)
                             }
                             item {
-                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, activityTitle)
+                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, activityTitle, action)
                             }
                             item {
                                 Spacer(modifier = Modifier.height(50.dp))
@@ -200,7 +250,13 @@ fun ComposeNote(
 
 
 @Composable
-fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableState<String>, completion: MutableState<String>, changedByCompletion: MutableState<Int>) {
+fun TextInputBox(
+    noteTextField: MutableState<TextFieldValue>,
+    noteText: MutableState<String>,
+    completion: MutableState<String>,
+    changedByCompletion: MutableState<Int>,
+    actionGenerated: MutableState<Boolean>
+) {
     noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
     val coroutineScope = rememberCoroutineScope()
     var cursorPosition by remember { mutableStateOf(0) }
@@ -329,6 +385,10 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
                     }
                 }
 
+                if (performCompletion) {
+                    actionGenerated.value = false
+                }
+
                 if (changedByCompletion.value == 0 && performCompletion) {
                     // Cancel any ongoing search
                     coroutineScope.coroutineContext.cancelChildren()
@@ -387,7 +447,15 @@ fun TextInputBox(noteTextField: MutableState<TextFieldValue>, noteText: MutableS
 }
 
 @Composable
-fun NoteControls(launcher: ActivityResultLauncher<Intent>, snackbarHostState: SnackbarHostState, title: String, content: MutableState<String>, currentNoteID: MutableState<String>, activityTitle: MutableState<String>) {
+fun NoteControls(
+    launcher: ActivityResultLauncher<Intent>,
+    snackbarHostState: SnackbarHostState,
+    title: String,
+    content: MutableState<String>,
+    currentNoteID: MutableState<String>,
+    activityTitle: MutableState<String>,
+    action: AssistAction
+) {
     val firestoreViewModel = FirestoreViewModel()
 
     val context = LocalContext.current
@@ -398,66 +466,182 @@ fun NoteControls(launcher: ActivityResultLauncher<Intent>, snackbarHostState: Sn
         .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
         color = Color.LightGray
     )
-    Row(
+
+    var bgCorner = if (action.category != "None") 0.dp else 10.dp
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
-            .clip(RoundedCornerShape(0.dp, 0.dp, 10.dp, 10.dp))
-            .background(Color(0xFFE5E5E5)),
+            .clip(RoundedCornerShape(0.dp, 0.dp, bgCorner, bgCorner))
+            .background(Color(0xFF3694C9))
+            .zIndex(1f),
     ) {
-        IconButton(onClick = {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            }
-            if (isSpeechRecognizerAvailable(context)) {
-                launcher.launch(intent)
-            } else {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Speech recognizer not available")
-                }
-            }
-        },
-        modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)) {
-            Icon(
-                ImageVector.vectorResource(id = R.drawable.mic_fill1_wght400_grad0_opsz48),
-                contentDescription = "Record Voice Note",
-                tint = Color(0xFF3694C9),
-                modifier = Modifier.size(36.dp)
-            )
-
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = {
-                focusManager.clearFocus() // Close the keyboard tray
-
-                firestoreViewModel.saveNote(content.value, title, System.currentTimeMillis().toString(), currentNoteID.value)
-                firestoreViewModel.loadingStatus.observeForever {
-                    if (it == LoadingStatus.SUCCESS) {
-                        activityTitle.value = "Edit Note"
-
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(0.dp)
+                .clip(RoundedCornerShape(0.dp, 0.dp, 10.dp, 10.dp))
+                .background(Color(0xFFE5E5E5))
+                .zIndex(2f),
+        ) {
+            IconButton(
+                onClick = {
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(
+                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                        )
+                    }
+                    if (isSpeechRecognizerAvailable(context)) {
+                        launcher.launch(intent)
+                    } else {
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Note Saved Successfully")
-                        }
-                    } else if (it == LoadingStatus.ERROR) {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Error Saving Note")
+                            snackbarHostState.showSnackbar("Speech recognizer not available")
                         }
                     }
-                }
+                },
+                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
+            ) {
+                Icon(
+                    ImageVector.vectorResource(id = R.drawable.mic_fill1_wght400_grad0_opsz48),
+                    contentDescription = "Record Voice Note",
+                    tint = Color(0xFF3694C9),
+                    modifier = Modifier.size(36.dp)
+                )
 
-                firestoreViewModel.noteID.observeForever {
-                    if (it != null && it != "") { currentNoteID.value = it }
-                }
-             },
-            shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp),
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
-                ,
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF3694C9), contentColor = Color.White)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    focusManager.clearFocus() // Close the keyboard tray
 
-        ) {
-            Text("Save")
+                    firestoreViewModel.saveNote(
+                        content.value,
+                        title,
+                        System.currentTimeMillis().toString(),
+                        currentNoteID.value
+                    )
+                    firestoreViewModel.loadingStatus.observeForever {
+                        if (it == LoadingStatus.SUCCESS) {
+                            activityTitle.value = "Edit Note"
 
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Note Saved Successfully")
+                            }
+                        } else if (it == LoadingStatus.ERROR) {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Error Saving Note")
+                            }
+                        }
+                    }
+
+                    firestoreViewModel.noteID.observeForever {
+                        if (it != null && it != "") {
+                            currentNoteID.value = it
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp),
+                modifier = Modifier.padding(
+                    top = 16.dp,
+                    bottom = 16.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3694C9),
+                    contentColor = Color.White
+                )
+
+            ) {
+                Text("Save")
+
+            }
         }
+    }
+    if (action.category != "None") {
+
+            Button(
+                onClick = {
+                    // Launch intent from action
+                    val intent = action.intent
+                    if (intent != null) {
+                        context.startActivity(intent)
+                    }
+                },
+                shape = RoundedCornerShape(0.dp, 0.dp, 10.dp, 10.dp),
+                modifier = Modifier
+                    .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
+                    .fillMaxWidth()
+                    .shadow(0.dp)
+                    .zIndex(1f)
+                    ,
+                elevation = ButtonDefaults.elevation(0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3694C9),
+                    contentColor = Color.White
+                ),
+            )
+            {
+                if (action.description != "None" && action.description != "" && action.title != "None" && action.title != "") {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 0.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+
+                    ) {
+                        Text(
+                            text = action.title,
+                            modifier = Modifier.padding(
+                                top = 16.dp,
+                                bottom = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp
+                            ),
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = action.description,
+                            modifier = Modifier.padding(
+                                top = 0.dp,
+                                bottom = 16.dp,
+                                start = 16.dp,
+                                end = 16.dp
+                            ),
+                            color = Color.White,
+                            fontSize = 12.sp
+                        )
+                    }
+                } else if (action.title != "None" && action.title != "") {
+                    Text(
+                        text = action.title,
+                        modifier = Modifier.padding(
+                            top = 16.dp,
+                            bottom = 16.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        text = action.category,
+                        modifier = Modifier.padding(
+                            top = 16.dp,
+                            bottom = 16.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
     }
 }
 fun isSpeechRecognizerAvailable(context: Context): Boolean {
@@ -537,4 +721,98 @@ fun buildAnnotatedStringWithColors(text:String, completion: String): AnnotatedSt
     }
 
     return builder.toAnnotatedString()
+}
+
+fun loadActionIntents(action: AssistAction) {
+    when (action.category) {
+        "None" -> {
+            action.category = "None"
+        }
+        "Search" -> {
+            if (action.term != "" && action.term != "None") {
+                val intent = Intent(Intent.ACTION_WEB_SEARCH)
+                intent.putExtra(SearchManager.QUERY, action.term)
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        "Define" -> {
+            if (action.term != "" && action.term != "None") {
+                val intent = Intent(Intent.ACTION_WEB_SEARCH)
+                intent.putExtra(SearchManager.QUERY, "define ${action.term}")
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        "Map" -> {
+            if (action.location != "" && action.location != "None") {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${action.location}"))
+                action.intent = intent
+            } else if (action.term != "" && action.term != "None") {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${action.term}"))
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        "Translate" -> {
+            if (action.term != "" && action.term != "None") {
+                val intent = Intent(Intent.ACTION_WEB_SEARCH)
+                intent.putExtra(SearchManager.QUERY, "translate ${action.term}")
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        "Reminder" -> {
+            // Add alarm to alarm manager
+            val intent = Intent(AlarmClock.ACTION_SET_ALARM)
+            intent.putExtra(AlarmClock.EXTRA_HOUR, action.hour)
+            intent.putExtra(AlarmClock.EXTRA_MINUTES, action.minute)
+            action.intent = intent
+        }
+        "Call" -> {
+            if (action.url != "" && action.url != "None" && action.url.startsWith("tel:")) {
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = Uri.parse(action.url)
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        "Email" -> {
+            if (action.url != "" && action.url != "None" && action.url.startsWith("mailto:")) {
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = Uri.parse(action.url)
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        "Weather" -> {
+            if (action.location != "" && action.location != "None") {
+                val intent = Intent(Intent.ACTION_WEB_SEARCH)
+                intent.putExtra(SearchManager.QUERY, "weather ${action.location}")
+                action.intent = intent
+            } else {
+                action.category = "None"
+            }
+        }
+        else -> {
+            if (action.response != "" && action.response != "None") {
+                if (action.url != "" && action.url != "None") {
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.data = Uri.parse(action.url)
+                    action.intent = intent
+                } else {
+                    action.category = "None"
+                }
+               // Open action in AI view
+            } else {
+                action.category = "None"
+            }
+        }
+    }
 }
