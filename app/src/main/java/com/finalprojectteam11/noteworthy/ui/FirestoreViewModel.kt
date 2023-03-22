@@ -1,5 +1,6 @@
 package com.finalprojectteam11.noteworthy.ui
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -158,7 +159,20 @@ class FirestoreViewModel : ViewModel() {
                 }
         }
     }
+    fun toggleNotePinned(noteId: String, currentPinnedStatus: Boolean) {
+        val noteRef = db.collection("notes").document(noteId)
 
+        // Toggle the pinned status
+        val newPinnedStatus = !currentPinnedStatus
+
+        noteRef.update("pinned", newPinnedStatus)
+            .addOnSuccessListener {
+                Log.d("FirestoreViewModel", "Note pinned status updated")
+            }
+            .addOnFailureListener { e ->
+                Log.w("FirestoreViewModel", "Error updating note pinned status", e)
+            }
+    }
     private fun getFilteredNotesQuery(filter: String): Query {
         val baseQuery = db.collection("notes")
         return when (filter) {

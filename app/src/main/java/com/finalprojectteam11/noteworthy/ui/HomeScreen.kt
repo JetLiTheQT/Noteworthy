@@ -33,7 +33,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.AppSettings
+import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.data.Note
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 // Dummy route for main screen
@@ -43,6 +46,7 @@ fun HomeScreen(navController: NavHostController) { }
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    val notesLoadingStatus = remember { mutableStateOf(LoadingStatus.LOADING) }
     val items = listOf(Screen.Home, Screen.AddNote, Screen.Settings)
     val currentScreen = navController.currentBackStackEntryAsState()
     val currentDisplayChoice = remember { mutableStateOf(AppSettings.displayChoice) }
@@ -159,10 +163,10 @@ fun MainScreen() {
                             })
                         }
                         item {
-                            pinnedNotes(currentDisplayChoice.value, pinnedNotesList, navController)
+                            pinnedNotes(currentDisplayChoice.value, pinnedNotesList, navController, snackbarHostState, firestoreViewModel)
                         }
                         item {
-                            allNotes(currentDisplayChoice.value, notesList, navController)
+                            allNotes(currentDisplayChoice.value, notesList, navController, snackbarHostState, firestoreViewModel)
                         }
                         item {
                             Spacer(modifier = Modifier.height(50.dp))
@@ -175,7 +179,7 @@ fun MainScreen() {
                     hostState = snackbarHostState,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(top = 1.dp)
+                        .padding(bottom = 14.dp)
                 )
             }
         },
@@ -295,7 +299,9 @@ fun displayChoice(onDisplayChoiceChange: (Boolean) -> Unit) {
 fun pinnedNotes(
     currentDisplayChoice: Boolean,
     notesList: SnapshotStateList<Note>,
-    navController: NavHostController
+    navController: NavHostController,
+    snackbarHostState: SnackbarHostState,
+    firestoreViewModel: FirestoreViewModel
 ) {
     Column(modifier = Modifier
         .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
@@ -322,7 +328,7 @@ fun pinnedNotes(
                     contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
                     content = {
                         items(notesList.size) {
-                            NoteCard(notesList[it], navController)
+                            NoteCard(notesList[it], navController, snackbarHostState, firestoreViewModel)
                         }
                     }
                 )
@@ -341,8 +347,7 @@ fun pinnedNotes(
 }
 
 @Composable
-fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, navController: NavController) {
-
+fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel) {
     Column(
         modifier = Modifier
             .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
@@ -370,7 +375,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                     contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
                     content = {
                         items(notesList.size) {
-                            NoteCard(notesList[it], navController)
+                            NoteCard(notesList[it], navController, snackbarHostState, firestoreViewModel)
                         }
                     }
                 )
@@ -391,8 +396,9 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NoteCard(note: Note, navController: NavController) {
+fun NoteCard(note: Note, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel) {
     val showPopupMenu = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Card(
         modifier = Modifier
@@ -433,20 +439,36 @@ fun NoteCard(note: Note, navController: NavController) {
         modifier = Modifier.wrapContentSize(Alignment.TopStart)
     ) {
         DropdownMenuItem(onClick = {
-            // TODO: add action for pinning/unpinning the note
+            firestoreViewModel.toggleNotePinned(note.id, note.pinned)
             showPopupMenu.value = false
+            if (note.pinned){
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Your note was successfully unpinned")
+                }
+            }
+            if (!note.pinned){
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Your note was successfully pinned")
+                }
+            }
+            firestoreViewModel.getNotes()
+            firestoreViewModel.getPinnedNotes()
         }) {
             Text(if (note.pinned) "Unpin" else "Pin")
         }
         DropdownMenuItem(onClick = {
-            // TODO: add action for deleting the note
-            showPopupMenu.value = false
+            firestoreViewModel.deleteNote(note.id) //Delete the note
+            showPopupMenu.value = false //Close popup.
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Your note was successfully deleted")
+            }
+            firestoreViewModel.getNotes()
+            firestoreViewModel.getPinnedNotes()
         }) {
             Text("Delete")
         }
     }
 }
-
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun NoteListItem(note: Note, navController: NavController) {
