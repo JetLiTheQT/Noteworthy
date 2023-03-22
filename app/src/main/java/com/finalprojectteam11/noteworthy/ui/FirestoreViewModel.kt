@@ -12,7 +12,6 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import com.finalprojectteam11.noteworthy.data.AppSettings
-import com.google.firebase.firestore.DocumentReference
 
 class FirestoreViewModel : ViewModel() {
     private val db = Firebase.firestore
@@ -38,13 +37,14 @@ class FirestoreViewModel : ViewModel() {
     private val _loadingStatus = MutableLiveData(LoadingStatus.SUCCESS)
     val loadingStatus: LiveData<LoadingStatus> = _loadingStatus
 
-    fun saveNote(noteString: String, title: String, time: String, id: String = "") {
+    fun saveNote(noteString: String, title: String, time: String, id: String = "", private: Boolean) {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
             val note = hashMapOf(
                 "title" to title,
                 "content" to noteString,
-                "time" to time
+                "time" to time,
+                "private" to private
             )
 
             if (id != "") {
