@@ -59,6 +59,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import kotlinx.coroutines.CoroutineScope
 
 @Composable
 fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, noteId : String?) {
@@ -71,48 +72,41 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
     val currentNoteID = remember { mutableStateOf("") }
     var action by remember { mutableStateOf(AssistAction()) }
     val actionGenerated = remember { mutableStateOf(false) }
-    var actionVisible = remember { MutableTransitionState(false) }
-    var noteFetched = false;
+    val notePrivate = remember { mutableStateOf(false) }
+    val actionVisible = remember { MutableTransitionState(false) }
+    var noteFetched = remember { mutableStateOf(false) }
+
+    val completionViewModel = CompletionViewModel()
+
 
     if (noteId != null && noteId != "") {
         val firestoreViewModel = FirestoreViewModel()
         firestoreViewModel.getNote(noteId)
 
-        val completionViewModel = CompletionViewModel()
-
         // once the completion is fetched, update the completion state
         firestoreViewModel.noteResult.observeForever {
-            if (it != null && !noteFetched) {
-                noteFetched = true
+            if (it != null && !noteFetched.value) {
+                noteFetched.value = true
                 currentNoteID.value = it.id
                 noteText.value = it.data?.get("content").toString()
                 searchQuery = it.data?.get("title").toString()
+                notePrivate.value = it.data?.get("private") != null && it.data?.get("private") == true
+
                 noteTextField.value = TextFieldValue(noteText.value, TextRange(noteText.value.length))
 
-                completionViewModel.fetchAction(noteText.value)
+                if (!notePrivate.value && !actionGenerated.value) {
+                    completionViewModel.fetchAction(noteText.value)
+                }
             }
         }
 
         completionViewModel.actionResults.observeForever {
-            if (!actionGenerated.value && it != null && it.choices.isNotEmpty()) {
+        if (!actionGenerated.value && it != null && it.choices.isNotEmpty()) {
                 val actionJSON = it.choices[0].text.substringAfter("{").substringBeforeLast("}")
                 val trailingCommasRemoved = actionJSON.replace(Regex(",(?=\\s*[}\\]])"), "")
                 val actionJSONString =  "{$trailingCommasRemoved}"
 
-                // Get last double quote in JSON string and remove trailing comma if present
-                val lastQuoteIndex = actionJSONString.lastIndexOf("\"")
-                val actionJSONStringFixed = if (actionJSONString[lastQuoteIndex - 1] == ',') {
-                    actionJSONString.substring(0, lastQuoteIndex - 1) + actionJSONString.substring(lastQuoteIndex)
-                } else {
-                    actionJSONString
-                }
-
                 try {
-                    val json = Json {
-                        ignoreUnknownKeys = true
-                        coerceInputValues = true
-                    }
-
                     val gson: Gson = GsonBuilder()
                         .registerTypeAdapter(AssistAction::class.java, AssistActionDeserializer())
                         .create()
@@ -121,8 +115,8 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
 
                     action = assistAction
                     loadActionIntents(action, actionVisible)
-                    actionGenerated.value = true
                     if (action.category != "None") {
+                        actionGenerated.value = true
                         actionVisible.targetState = true
                     }
 
@@ -158,9 +152,6 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
                 noteText.value = "$textBeforeCursor $recognizedText $textAfterCursor"
                 // Set cursor position to end of recognized text
                 noteTextField.value = TextFieldValue(noteText.value, TextRange(cursorStart + recognizedText.length + 1))
-
-                // Trigger new completion request
-                performAutoCompleteSearch(noteText.value, completionText, changedByCompletion)
             }
         }
     }
@@ -180,7 +171,7 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
                                 ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
                             }
                             item {
-                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated, actionVisible)
+                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated, actionVisible, notePrivate, completionViewModel)
                             }
                             item {
                                 NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel, actionVisible, navController)
@@ -256,7 +247,9 @@ fun TextInputBox(
     completion: MutableState<String>,
     changedByCompletion: MutableState<Int>,
     actionGenerated: MutableState<Boolean>,
-    actionVisible: MutableTransitionState<Boolean>
+    actionVisible: MutableTransitionState<Boolean>,
+    notePrivate: MutableState<Boolean>,
+    completionViewModel: CompletionViewModel
 ) {
     noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
     val coroutineScope = rememberCoroutineScope()
@@ -287,7 +280,8 @@ fun TextInputBox(
             value = noteTextField.value,
             onValueChange = {
                 // By default, autocomplete the current note
-                var performCompletion = true
+
+                var performCompletion = !notePrivate.value
 
                 if (noteTextField.value.selection.start == noteTextField.value.text.length) {
                     coroutineScope.launch {
@@ -302,6 +296,7 @@ fun TextInputBox(
                 if (it.text.length < previousText.length) {
                     noteText.value = it.text.substring(0, it.text.length - completion.value.length)
                     completion.value = ""
+
                     noteTextField.value = TextFieldValue(
                         noteText.value + completion.value,
                         TextRange(it.selection.start, it.selection.start)
@@ -328,7 +323,6 @@ fun TextInputBox(
                         if (!completion.value.contains(oldCompletionText)) {
                             noteText.value = newText
                             completion.value = ""
-
                             noteTextField.value = TextFieldValue(
                                 noteText.value + completion.value,
                                 TextRange(it.selection.start, it.selection.start)
@@ -351,7 +345,6 @@ fun TextInputBox(
                         noteText.value =
                             it.text.substring(0, it.text.length - completion.value.length)
                         completion.value = ""
-
                         noteTextField.value = TextFieldValue(
                             noteText.value + completion.value,
                             TextRange(it.selection.start, it.selection.start)
@@ -363,6 +356,7 @@ fun TextInputBox(
                         noteText.value =
                             it.text.substring(0, it.text.length - completion.value.length)
                         completion.value = ""
+
                         noteTextField.value = TextFieldValue(
                             noteText.value + completion.value,
                             TextRange(
@@ -388,21 +382,7 @@ fun TextInputBox(
                     }
                 }
 
-                if (performCompletion) {
-                    actionGenerated.value = false
-                }
-//
-                if (changedByCompletion.value == 0 && performCompletion) {
-                    // Cancel any ongoing search
-                    coroutineScope.coroutineContext.cancelChildren()
-                    // Launch a new search after 2 seconds
-                    coroutineScope.launch {
-                        delay(1500)
-                        performAutoCompleteSearch(noteText.value, completion, changedByCompletion)
-                    }
-                } else {
-                    changedByCompletion.value = 0
-                }
+                triggerAutoCompletion(noteText, completion, changedByCompletion, performCompletion, coroutineScope, actionGenerated, completionViewModel)
             },
             label = { Text("Note Content") },
             visualTransformation = ColorsTransformation(completion.value),
@@ -443,6 +423,31 @@ fun TextInputBox(
                 backgroundColor = MaterialTheme.colors.surface,
             )
         )
+    }
+}
+
+fun triggerAutoCompletion(
+    noteText: MutableState<String>,
+    completion: MutableState<String>,
+    changedByCompletion: MutableState<Int>,
+    performCompletion: Boolean,
+    coroutineScope: CoroutineScope,
+    actionGenerated: MutableState<Boolean>,
+    completionViewModel: CompletionViewModel
+) {
+    if (changedByCompletion.value == 0 && performCompletion) {
+        // Cancel any ongoing search
+        coroutineScope.coroutineContext.cancelChildren()
+        // Launch a new search after 2 seconds
+        coroutineScope.launch {
+            delay(2000)
+            performAutoCompleteSearch(noteText.value, completion, changedByCompletion)
+            delay(1000)
+            actionGenerated.value = false
+            completionViewModel.fetchAction(noteText.value)
+        }
+    } else {
+        changedByCompletion.value = 0
     }
 }
 
@@ -634,7 +639,7 @@ class ColorsTransformation(private var completion: String) : VisualTransformatio
 }
 
 fun performAutoCompleteSearch(searchText: String, completion: MutableState<String>, changedByCompletion: MutableState<Int>) {
-    if (searchText != "") {
+    if (searchText != "" && changedByCompletion.value == 0 && completion.value == "") {
         val completionViewModel = CompletionViewModel()
         completionViewModel.fetchCompletion(searchText)
 

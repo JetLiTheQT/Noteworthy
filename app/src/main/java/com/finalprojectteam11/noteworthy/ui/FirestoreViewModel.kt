@@ -12,6 +12,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import com.finalprojectteam11.noteworthy.data.AppSettings
+import com.google.firebase.firestore.DocumentReference
 
 class FirestoreViewModel : ViewModel() {
     private val db = Firebase.firestore
@@ -127,13 +128,13 @@ class FirestoreViewModel : ViewModel() {
                 "time"
             }
 
-            val query = getFilteredNotesQuery(filter)
+            val query = db.collection("notes")
                 .orderBy(selectedSort, queryDirection)
 
             query.get()
                 .addOnSuccessListener { result ->
                     _loadingStatus.value = LoadingStatus.SUCCESS
-                    _noteResults.value = result.documents
+                    _noteResults.value = filterNotes(filter, result.documents)
                 }
                 .addOnFailureListener { exception ->
                     _loadingStatus.value = LoadingStatus.ERROR
@@ -157,14 +158,14 @@ class FirestoreViewModel : ViewModel() {
                 "time"
             }
 
-            val query = getFilteredNotesQuery(filter)
+            val query = db.collection("notes")
                 .whereEqualTo("pinned", true)
                 .orderBy(selectedSort, queryDirection)
 
             query.get()
                 .addOnSuccessListener { result ->
                     _loadingStatus.value = LoadingStatus.SUCCESS
-                    _pinnedNoteResults.value = result.documents
+                    _pinnedNoteResults.value = filterNotes(filter, result.documents)
                 }
                 .addOnFailureListener { exception ->
                     _loadingStatus.value = LoadingStatus.ERROR
@@ -186,14 +187,60 @@ class FirestoreViewModel : ViewModel() {
                 Log.w("FirestoreViewModel", "Error updating note pinned status", e)
             }
     }
-    private fun getFilteredNotesQuery(filter: String): Query {
-        val baseQuery = db.collection("notes")
+
+    fun toggleNotePrivate(noteId: String, currentPrivateStatus: Boolean) {
+        val noteRef = db.collection("notes").document(noteId)
+
+        // Toggle the pinned status
+        val newPrivateStatus = !currentPrivateStatus
+
+        noteRef.update("private", newPrivateStatus)
+            .addOnSuccessListener {
+                Log.d("FirestoreViewModel", "Note private status updated")
+            }
+            .addOnFailureListener { e ->
+                Log.w("FirestoreViewModel", "Error updating note private status", e)
+            }
+    }
+
+    private fun filterNotes(filter: String, notes: MutableList<DocumentSnapshot>): List<DocumentSnapshot>? {
         return when (filter) {
-            "NW_INTERNAL_NEW" -> baseQuery.limit(5)
-            "NW_INTERNAL_PRIVATE" -> baseQuery.whereEqualTo("private", true)
-            "NW_INTERNAL_AI_ASSIST" -> baseQuery.whereNotEqualTo("private", true)
-            "" -> baseQuery
-            else -> baseQuery.whereArrayContains("categories", filter)
+            "NW_INTERNAL_NEW" -> {
+                // sort notes by time and return the first 5
+                val sortedNotes = notes.sortedByDescending { if (it.data?.get("time") != null) it.data?.get("time").toString().toLong() else 0 }
+                sortedNotes.take(5)
+            }
+            "NW_INTERNAL_PRIVATE" -> {
+                val privateNotes = mutableListOf<DocumentSnapshot>()
+                for (note in notes) {
+                    val notePrivate = note.data?.get("private")
+                    if (notePrivate != null && notePrivate == true) {
+                        privateNotes.add(note)
+                    }
+                }
+                privateNotes
+            }
+            "NW_INTERNAL_AI_ASSIST" -> {
+                val aiNotes = mutableListOf<DocumentSnapshot>()
+                for (note in notes) {
+                    val notePrivate = note.data?.get("private")
+                    if (notePrivate == null || notePrivate == false) {
+                        aiNotes.add(note)
+                    }
+                }
+                aiNotes
+            }
+            "" -> notes
+            else -> {
+                val filteredNotes = mutableListOf<DocumentSnapshot>()
+                for (note in notes) {
+                    val noteCategories = note.data?.get("categories") as List<String>
+                    if (noteCategories.contains(filter)) {
+                        filteredNotes.add(note)
+                    }
+                }
+                filteredNotes
+            }
         }
     }
 

@@ -89,6 +89,7 @@ fun MainScreen() {
                     time = if (document.data!!["time"] == null) "" else document.data!!["time"].toString(),
                     id = document.id,
                     pinned = if (document.data!!["pinned"] == null) false else document.data!!["pinned"] as Boolean,
+                    private = if (document.data!!["private"] == null) false else document.data!!["private"] as Boolean,
                 )
                 notesList.add(note)
             }
@@ -105,6 +106,7 @@ fun MainScreen() {
                     time = if (document.data!!["time"] == null) "" else document.data!!["time"].toString(),
                     id = document.id,
                     pinned = if (document.data!!["pinned"] == null) false else document.data!!["pinned"] as Boolean,
+                    private = if (document.data!!["private"] == null) false else document.data!!["private"] as Boolean,
                 )
                 pinnedNotesList.add(note)
             }
@@ -457,6 +459,24 @@ fun NoteCard(note: Note, navController: NavController, snackbarHostState: Snackb
                 firestoreViewModel.getPinnedNotes()
             }) {
                 Text(if (note.pinned) "Unpin" else "Pin")
+            }
+            DropdownMenuItem(onClick = {
+                firestoreViewModel.toggleNotePrivate(note.id, note.private)
+                showPopupMenu.value = false
+                if (note.private) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully marked as public")
+                    }
+                }
+                if (!note.private) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully marked as private")
+                    }
+                }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text(if (note.private) "Mark Public" else "Mark Private")
             }
             DropdownMenuItem(onClick = {
                 firestoreViewModel.deleteNote(note.id) //Delete the note
