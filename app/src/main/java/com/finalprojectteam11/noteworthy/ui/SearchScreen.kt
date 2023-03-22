@@ -4,11 +4,18 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
@@ -135,4 +142,45 @@ fun SearchResultItem(result: SearchResult, navController: NavController) {
                 navController.navigate("edit_note/${result.objectID}")
             }
     )
+}
+
+@Composable
+fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -> Unit, navController: NavController) {
+    val focusRequester = remember { FocusRequester() }
+    TextField(
+        singleLine = true,
+        value = searchQuery.value,
+        onValueChange = onSearchQueryChange,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = {
+            navController.navigate("search/" + searchQuery.value)
+            focusRequester.freeFocus()
+        }),
+        enabled = true,
+        label = { Text(text = "Search") },
+//        leadingIcon = {
+//            Icon(
+//                imageVector = Icons.Filled.Search,
+//                contentDescription = "Search",
+//            )
+//        },
+        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp),
+
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(2.dp)
+            .height(56.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .focusRequester(focusRequester),
+        colors = TextFieldDefaults.textFieldColors(
+            textColor = MaterialTheme.colors.onSurface,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            backgroundColor = MaterialTheme.colors.surface
+        ),
+    )
+    LaunchedEffect(focusRequester) {
+        focusRequester.requestFocus()
+    }
 }

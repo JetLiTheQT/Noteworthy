@@ -37,6 +37,7 @@ import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.data.Note
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.format.TextStyle
 
 @Composable
 // Dummy route for main screen
@@ -143,16 +144,16 @@ fun MainScreen() {
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        item {
-                            SearchBox(
-                                searchQuery = searchQuery,
-                                onSearchQueryChange = {
-                                    searchQuery.value = it
-                                },
-                                snackbarHostState,
-                                navController
-                            )
-                        }
+//                        item {
+//                            SearchBox(
+//                                searchQuery = searchQuery,
+//                                onSearchQueryChange = {
+//                                    searchQuery.value = it
+//                                },
+//                                snackbarHostState,
+//                                navController
+//                            )
+//                        }
                         item {
                             filterSection(categoriesList, selectedButtons, firestoreViewModel)
                         }
@@ -496,39 +497,6 @@ fun NoteListItem(note: Note, navController: NavController) {
 }
 
 
-@Composable
-fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -> Unit, snackbarHostState: SnackbarHostState, navController: NavController) {
-    val focusRequester = remember { FocusRequester() }
 
-    TextField(
-        singleLine = true,
-        value = searchQuery.value,
-        onValueChange = onSearchQueryChange,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = {
-            navController.navigate("search/" + searchQuery.value)
-            focusRequester.freeFocus()
-        }),
-        label = { Text(text = "Search") },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = "Search",
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
-            .height(56.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .focusRequester(focusRequester),
-        colors = TextFieldDefaults.textFieldColors(
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            backgroundColor = MaterialTheme.colors.surface
-        )
-    )
-}
 
 

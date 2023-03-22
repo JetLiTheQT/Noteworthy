@@ -1,5 +1,6 @@
 package com.finalprojectteam11.noteworthy.ui
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.navigation.compose.NavHost
@@ -83,10 +84,12 @@ fun FloatingActionButton(navController: NavController){
 }
 
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewModel) {
     val canGoBack = navController.previousBackStackEntry != null
-
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val searchQuery = mutableStateOf("")
     var title by remember { mutableStateOf("") }
 
     sharedViewModel.appBarTitle.observeForever() {
@@ -120,6 +123,22 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
             }
         }}
         else null,
+        actions = {
+            if(currentRoute == Screen.Home.route){
+                IconButton(onClick = {navController.navigate(Screen.Search.route)}){
+                    Icon(Icons.Filled.Search, contentDescription = "Search")
+                }
+            }
+            if(currentRoute == Screen.Search.route){
+                            SearchBox(
+                                searchQuery = searchQuery,
+                                onSearchQueryChange = {
+                                    searchQuery.value = it
+                                },
+                                                                navController
+                            )
+            }
+        }
     )
 }
 
