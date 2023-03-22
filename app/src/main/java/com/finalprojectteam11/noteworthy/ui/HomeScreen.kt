@@ -32,6 +32,7 @@ import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.AppSettings
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.data.Note
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.format.TextStyle
@@ -302,6 +303,10 @@ fun pinnedNotes(
     snackbarHostState: SnackbarHostState,
     firestoreViewModel: FirestoreViewModel
 ) {
+    var currentLoadingStatus = LoadingStatus.SUCCESS
+    firestoreViewModel.loadingStatus.observeForever {
+        currentLoadingStatus = it
+    }
     Column(modifier = Modifier
         .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
         .fillMaxWidth()) {
@@ -311,8 +316,11 @@ fun pinnedNotes(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp)
         )
-
-        if (notesList.isEmpty()) {
+        if (currentLoadingStatus == LoadingStatus.LOADING) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }}
+        if (notesList.isEmpty() && currentLoadingStatus == LoadingStatus.SUCCESS) {
             Text(
                 text = "No pinned notes.\nPress and hold on a note to pin it.",
                 fontSize = 18.sp,
@@ -351,6 +359,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
     firestoreViewModel.loadingStatus.observeForever {
         currentLoadingStatus = it
     }
+
     Column(
         modifier = Modifier
             .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
@@ -366,7 +375,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }}
-            if (notesList.isEmpty()) {
+        if (notesList.isEmpty() && currentLoadingStatus == LoadingStatus.SUCCESS) {
                 Text(
                     text = "No notes found.\nPress the pencil button to add a note.",
                     fontSize = 18.sp,
