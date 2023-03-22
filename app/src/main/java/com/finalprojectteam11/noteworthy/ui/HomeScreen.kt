@@ -425,8 +425,9 @@ fun NoteCard(note: Note, navController: NavController, snackbarHostState: Snackb
             Column(modifier = Modifier.padding(14.dp)) {
                 Text(
                     text = if (note.title == "") "Untitled" else note.title,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colors.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
@@ -492,9 +493,11 @@ fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: F
                 ) {
                     Text(
                         text = if (note.title == "") "Untitled" else note.title,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colors.primary
+
                     )
                     IconButton(
                         onClick = { showPopupMenu.value = true },

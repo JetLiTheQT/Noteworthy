@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -33,8 +36,12 @@ fun ProfileScreen(navController: NavHostController) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-
-            ProfileCard()
+            val gradient = Brush.linearGradient(
+                colors = listOf(
+                    Color.DarkGray.copy(alpha = 0.6f),
+                    Color.Red.copy(alpha = 0.6f)
+                ))
+            ProfileCard(gradient)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -44,41 +51,29 @@ fun ProfileScreen(navController: NavHostController) {
 
 }
 @Composable
-fun ProfileCard(){
-    Text(
-        text = "Account Info",
-        style = MaterialTheme.typography.h6,
-        modifier = Modifier.padding(bottom = 8.dp)
-    )
-    Card(
+fun ProfileCard(gradient: Brush){
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
-            .padding(10.dp),
-        backgroundColor = MaterialTheme.colors.surface,
-        elevation = 0.dp,
-        shape = Shapes.large
-    ){
-        Row(
-            modifier = Modifier.padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ){
-            Column{
-                Text(
-                    text = "Name: John Doe",
-                    style = MaterialTheme.typography.body1,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "Email: JohnDoe@example.com",
-                    style = MaterialTheme.typography.body1,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
+            .padding(8.dp)
+            .background(gradient)
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Name: John Doe",
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Email: JohnDoe@email.com",
+                style = MaterialTheme.typography.body1,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
         }
-
     }
-
 }
 
 
