@@ -175,7 +175,7 @@ fun MainScreen() {
                         }
                     }
                 }
-                AppNavigator(navController, sharedViewModel)
+                AppNavigator(navController, sharedViewModel, firestoreViewModel)
                 // Position the SnackbarHost at the top
                 SnackbarHost(
                     hostState = snackbarHostState,
