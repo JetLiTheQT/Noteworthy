@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -108,7 +109,7 @@ fun MainScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(0.dp),
-        backgroundColor = Color.Transparent,
+        //backgroundColor = Color.Transparent,
         topBar = { TopNavBar(navController = navController) },
         bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = { FloatingActionButton(navController) },
@@ -119,7 +120,7 @@ fun MainScreen() {
                 Surface(
                     modifier = Modifier
                         .fillMaxSize(),
-                    color = Color(0xFFEFEFEF),
+                    //color = Color(0xFFEFEFEF) ,
                 ) {
                     LazyColumn(
                         modifier = Modifier
@@ -209,8 +210,8 @@ fun FilterButton(text: String, id: Int, selectedButtons: SnapshotStateList<Boole
             .height(38.dp),
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = if (isSelected) Color.LightGray else Color(0xFFE5E5E5),
-            contentColor = Color.Black
+            //backgroundColor = if (isSelected) Color.LightGray else Color(0xFFE5E5E5),
+            //contentColor = Color.Black
         )
 
     ) {
@@ -313,7 +314,7 @@ fun pinnedNotes(
                     for (note in notesList) {
                         NoteListItem(note, navController)
                         if (note != notesList.last()) {
-                            Divider(color = Color.LightGray)
+                            Divider()//color = Color.LightGray)
                         }
                     }
                 })
@@ -362,7 +363,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                     for (note in notesList) {
                         NoteListItem(note, navController)
                         if (note != notesList.last()) {
-                            Divider(color = Color.LightGray)
+                            Divider()//color = Color.LightGray)
                         }
                     }
                 })
@@ -389,7 +390,7 @@ fun NoteCard(note: Note, navController: NavController) {
                 }
             ),
         shape = RoundedCornerShape(20.dp),
-        backgroundColor = Color(0xFFE5E5E5),
+        //backgroundColor = Color(0xFFE5E5E5),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
@@ -451,7 +452,7 @@ fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -
             Icon(
                 imageVector = Icons.Filled.Search,
                 contentDescription = "Search",
-                tint = Color.Black
+                //tint = Color.Black
             )
         },
         modifier = Modifier

@@ -52,7 +52,7 @@ import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.AssistAction
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.ui.theme.CompletionViewModel
-import com.finalprojectteam11.noteworthy.ui.theme.MyApplicationTheme
+import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -155,15 +155,14 @@ fun NoteScreen(navController: NavController, noteId : String?) {
             }
         }
     }
-        MyApplicationTheme {
             Box(modifier = Modifier.fillMaxSize()) {
                 Scaffold(
-                    backgroundColor = Color(0xFFEFEFEF),
+                    // backgroundColor = Color(0xFFEFEFEF),
                 ) { innerPadding ->
                     Surface(
                         modifier = Modifier
                             .padding(innerPadding),
-                        color = Color(0xFFEFEFEF),
+                        // color = Color(0xFFEFEFEF),
                     ) {
                         LazyColumn(
                             modifier = Modifier
@@ -194,7 +193,6 @@ fun NoteScreen(navController: NavController, noteId : String?) {
                 )
         }
     }
-}
 
 
 @Composable
@@ -212,7 +210,7 @@ fun ComposeNote(
                 text = "Enter Note Title",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                color = Color.Black
+                //color = Color.Black
             )
         },
         modifier = Modifier
@@ -231,7 +229,7 @@ fun ComposeNote(
         ),
         textStyle = TextStyle(
             fontSize = 18.sp,
-            color = Color.Black,
+            //color = Color.Black,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold
         ),
@@ -279,7 +277,7 @@ fun TextInputBox(
             .fillMaxWidth()
             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
             .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp))
-            .background(Color(0xFFE5E5E5))
+            //.background(Color(0xFFE5E5E5))
             .height(300.dp) // Set a fixed height for the Box
     ) {
         TextField(
@@ -464,7 +462,7 @@ fun NoteControls(
     Divider(modifier = Modifier
         .fillMaxWidth()
         .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
-        color = Color.LightGray
+        //color = Color.LightGray
     )
 
     var bgCorner = if (action.category != "None") 0.dp else 10.dp
@@ -508,7 +506,6 @@ fun NoteControls(
                     tint = Color(0xFF3694C9),
                     modifier = Modifier.size(36.dp)
                 )
-
             }
             Spacer(modifier = Modifier.weight(1f))
             Button(
@@ -548,10 +545,10 @@ fun NoteControls(
                     start = 16.dp,
                     end = 16.dp
                 ),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3694C9),
-                    contentColor = Color.White
-                )
+                // colors = ButtonDefaults.buttonColors(
+                //     backgroundColor = Color(0xFF3694C9),
+                //     contentColor = Color.White
+                // )
 
             ) {
                 Text("Save")
@@ -707,10 +704,10 @@ fun buildAnnotatedStringWithColors(text:String, completion: String): AnnotatedSt
         builder.append(" ")
         // Append right arrow with border
         builder.withStyle(style = SpanStyle(
-            color = Color.Gray,
-            background = Color.LightGray,
+            //color = Color.Gray,
+            //background = Color.LightGray,
             shadow = Shadow(
-                color = Color.Gray,
+                //color = Color.Gray,
                 offset = Offset(1f, 1f),
                 blurRadius = 1f
             ),
