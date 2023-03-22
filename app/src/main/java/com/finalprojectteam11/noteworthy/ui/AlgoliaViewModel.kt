@@ -1,7 +1,6 @@
-package com.finalprojectteam11.noteworthy.ui.theme
+package com.finalprojectteam11.noteworthy.ui
 
 import com.finalprojectteam11.noteworthy.data.SearchResult
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,12 +19,12 @@ class AlgoliaViewModel: ViewModel() {
     private val ALGOLIA_APP_ID = "AKMAX5WIPL"
     private val ALGOLIA_API_KEY = "be8dfacf84ba3775b8e703577106a0a5"
 
-    val client = ClientSearch(
+    private val client = ClientSearch(
         applicationID = ApplicationID(ALGOLIA_APP_ID),
         apiKey = APIKey(ALGOLIA_API_KEY)
     )
 
-    val index = client.initIndex(IndexName("notes"))
+    private val index = client.initIndex(IndexName("notes"))
 
     private val _searchResults = MutableLiveData<ResponseSearch>(null)
     val searchResults: LiveData<ResponseSearch> = _searchResults
@@ -33,7 +32,7 @@ class AlgoliaViewModel: ViewModel() {
     private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: LiveData<String?> = _errorMessage
 
-    private val _loadingStatus = MutableLiveData<LoadingStatus>(LoadingStatus.SUCCESS)
+    private val _loadingStatus = MutableLiveData(LoadingStatus.SUCCESS)
     val loadingStatus: LiveData<LoadingStatus> = _loadingStatus
 
     fun search(input: String) {

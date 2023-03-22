@@ -1,7 +1,6 @@
 package com.finalprojectteam11.noteworthy.ui
 
 import android.annotation.SuppressLint
-import android.content.res.Resources
 import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -34,7 +33,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.Note
-import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 
 @Composable
 // Dummy route for main screen
@@ -47,22 +45,24 @@ fun MainScreen() {
     val items = listOf(Screen.Home, Screen.AddNote, Screen.Settings)
     val currentScreen = navController.currentBackStackEntryAsState()
     val currentDisplayChoice = remember { mutableStateOf(false) }
-    var searchQuery = mutableStateOf("")
+    val searchQuery = mutableStateOf("")
     // Get the current screen and its title
     items.find { it.route == currentScreen.value?.destination?.route }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val sharedViewModel = SharedViewModel()
 
     val firestoreViewModel = FirestoreViewModel()
     firestoreViewModel.getNotes()
     firestoreViewModel.getPinnedNotes()
     firestoreViewModel.getCategories()
 
-    var categoriesList = remember { mutableStateListOf<String>() }
+    val categoriesList = remember { mutableStateListOf<String>() }
     val notesList = remember { mutableStateListOf<Note>() }
     val pinnedNotesList = remember { mutableStateListOf<Note>() }
     val selectedButtons = remember { mutableStateListOf<Boolean>() }
 
-    firestoreViewModel.noteResults.observeForever() {
+    firestoreViewModel.noteResults.observeForever {
         notesList.clear()
         if (it != null) {
             for (document in it) {
@@ -78,7 +78,7 @@ fun MainScreen() {
         }
     }
 
-    firestoreViewModel.pinnedNoteResults.observeForever() {
+    firestoreViewModel.pinnedNoteResults.observeForever {
         pinnedNotesList.clear()
         if (it != null) {
             for (document in it) {
@@ -94,7 +94,7 @@ fun MainScreen() {
         }
     }
 
-    firestoreViewModel.categoryResults.observeForever() {
+    firestoreViewModel.categoryResults.observeForever {
         categoriesList.clear()
         selectedButtons.clear()
         if (it != null) {
@@ -108,7 +108,7 @@ fun MainScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(0.dp),
-        topBar = { TopNavBar(navController = navController) },
+        topBar = { TopNavBar(navController = navController, sharedViewModel) },
         bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = { FloatingActionButton(navController) },
         floatingActionButtonPosition = FabPosition.Center,
@@ -154,7 +154,7 @@ fun MainScreen() {
                         }
                     }
                 }
-                AppNavigator(navController)
+                AppNavigator(navController, sharedViewModel)
                 // Position the SnackbarHost at the top
                 SnackbarHost(
                     hostState = snackbarHostState,
@@ -206,8 +206,8 @@ fun FilterButton(text: String, id: Int, selectedButtons: SnapshotStateList<Boole
         modifier = Modifier
             .padding(start = 8.dp, end = 4.dp)
             .height(38.dp),
+        elevation = ButtonDefaults.elevation(0.dp),
         shape = RoundedCornerShape(20.dp),
-
         colors =
             if (isSelected) {
                 ButtonDefaults.buttonColors()
@@ -276,7 +276,6 @@ fun displayChoice(onDisplayChoiceChange: (Boolean) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun pinnedNotes(
     currentDisplayChoice: Boolean,
@@ -375,7 +374,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NoteCard(note: Note, navController: NavController) {
     Card(

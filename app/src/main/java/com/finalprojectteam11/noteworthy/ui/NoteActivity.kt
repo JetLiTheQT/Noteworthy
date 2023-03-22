@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.AlarmClock
-import android.provider.CalendarContract
 import android.speech.RecognizerIntent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -29,9 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -42,7 +39,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
-import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,15 +47,12 @@ import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.AssistAction
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
-import com.finalprojectteam11.noteworthy.ui.theme.CompletionViewModel
-import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import java.util.Calendar
 
 @Composable
-fun NoteScreen(navController: NavController, noteId : String?) {
+fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, noteId : String?) {
     var searchQuery by remember { mutableStateOf("") }
     val noteText = remember { mutableStateOf("") }
     val noteTextField = remember { mutableStateOf(TextFieldValue()) }
@@ -67,59 +60,55 @@ fun NoteScreen(navController: NavController, noteId : String?) {
     val changedByCompletion = remember { mutableStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
     val currentNoteID = remember { mutableStateOf("") }
-    val activityTitle =  remember { mutableStateOf("Add Note") }
     var action by remember { mutableStateOf(AssistAction()) }
-    var actionGenerated = remember { mutableStateOf(false) }
+    val actionGenerated = remember { mutableStateOf(false) }
+    var noteFetched = false;
 
     if (noteId != null && noteId != "") {
-        var firestoreViewModel = FirestoreViewModel()
+        val firestoreViewModel = FirestoreViewModel()
         firestoreViewModel.getNote(noteId)
 
-        var completionViewModel = CompletionViewModel()
+        val completionViewModel = CompletionViewModel()
 
         // once the completion is fetched, update the completion state
-        firestoreViewModel.noteResult.observeForever() {
-            if (it != null) {
+        firestoreViewModel.noteResult.observeForever {
+            if (it != null && !noteFetched) {
+                noteFetched = true
                 currentNoteID.value = it.id
                 noteText.value = it.data?.get("content").toString()
                 searchQuery = it.data?.get("title").toString()
-                noteTextField.value = TextFieldValue(noteText.value)
-                activityTitle.value = "Edit Note"
+                noteTextField.value = TextFieldValue(noteText.value, TextRange(noteText.value.length))
+
                 completionViewModel.fetchAction(noteText.value)
             }
         }
 
-        completionViewModel.actionResults.observeForever() {
-            if (!actionGenerated.value) {
-                if (it != null) {
-                    if (it.choices.isNotEmpty()) {
-                        actionGenerated.value = true
-                        val actionJSON = it.choices[0].text.substringAfter("{").substringBeforeLast("}")
-                        val actionJSONString = "{$actionJSON}"
+        completionViewModel.actionResults.observeForever {
+            if (!actionGenerated.value && it != null && it.choices.isNotEmpty()) {
+                val actionJSON = it.choices[0].text.substringAfter("{").substringBeforeLast("}")
+                val actionJSONString = "{$actionJSON}"
 
-                        // Get last double quote in JSON string and remove trailing comma if present
-                        val lastQuoteIndex = actionJSONString.lastIndexOf("\"")
-                        val actionJSONStringFixed = if (actionJSONString[lastQuoteIndex - 1] == ',') {
-                            actionJSONString.substring(0, lastQuoteIndex - 1) + actionJSONString.substring(lastQuoteIndex)
-                        } else {
-                            actionJSONString
-                        }
+                // Get last double quote in JSON string and remove trailing comma if present
+                val lastQuoteIndex = actionJSONString.lastIndexOf("\"")
+                val actionJSONStringFixed = if (actionJSONString[lastQuoteIndex - 1] == ',') {
+                    actionJSONString.substring(0, lastQuoteIndex - 1) + actionJSONString.substring(lastQuoteIndex)
+                } else {
+                    actionJSONString
+                }
 
-                        try {
-                            val json = Json {
-                                ignoreUnknownKeys = true
-                                coerceInputValues = true
-                            }
-
-                            action = json.decodeFromString(actionJSONStringFixed)
-                            Log.d("JSON", action.toString())
-                            loadActionIntents(action)
-
-                        } catch (e: Exception) {
-                            Log.d("JSON", "Error parsing JSON")
-                            Log.d("JSON", e.toString())
-                        }
+                try {
+                    val json = Json {
+                        ignoreUnknownKeys = true
+                        coerceInputValues = true
                     }
+
+                    action = json.decodeFromString(actionJSONStringFixed)
+                    loadActionIntents(action)
+                    actionGenerated.value = true
+
+                } catch (e: Exception) {
+                    Log.d("JSON", "Error parsing JSON")
+                    Log.d("JSON", e.toString())
                 }
             }
         }
@@ -130,10 +119,10 @@ fun NoteScreen(navController: NavController, noteId : String?) {
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             matches?.firstOrNull()?.let { recognizedText ->
                 // Get cursor position from noteTextField
-                var cursorStart = noteTextField.value.selection.start
-                var cursorEnd = noteTextField.value.selection.end
+                val cursorStart = noteTextField.value.selection.start
+                val cursorEnd = noteTextField.value.selection.end
                 // Get text before cursor
-                var textBeforeCursor = noteTextField.value.text.substring(0, cursorStart)
+                val textBeforeCursor = noteTextField.value.text.substring(0, cursorStart)
                 // Get text after cursor
                 var textAfterCursor = noteTextField.value.text.substring(cursorEnd, noteTextField.value.text.length)
 
@@ -156,9 +145,7 @@ fun NoteScreen(navController: NavController, noteId : String?) {
         }
     }
             Box(modifier = Modifier.fillMaxSize()) {
-                Scaffold(
-                    // backgroundColor = Color(0xFFEFEFEF),
-                ) { innerPadding ->
+                Scaffold () { innerPadding ->
                     Surface(
                         modifier = Modifier
                             .padding(innerPadding),
@@ -176,7 +163,7 @@ fun NoteScreen(navController: NavController, noteId : String?) {
                                 TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated)
                             }
                             item {
-                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, activityTitle, action)
+                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel)
                             }
                             item {
                                 Spacer(modifier = Modifier.height(50.dp))
@@ -278,14 +265,15 @@ fun TextInputBox(
         TextField(
             value = noteTextField.value,
             onValueChange = {
+                // By default, autocomplete the current note
                 var performCompletion = true
-                cursorPosition = noteTextField.value.selection.start // update cursor position
+
                 if (noteTextField.value.selection.start == noteTextField.value.text.length) {
                     coroutineScope.launch {
                         scrollState.animateScrollTo(scrollState.maxValue) // scroll to the end of the text
                     }
                 }
-//                Log.d("TextField", "CursorPositionValue:  {$cursorPosition}")
+
                 // Backup previous text for comparison
                 val previousText = noteText.value.plus(completion.value)
 
@@ -338,6 +326,7 @@ fun TextInputBox(
 
                         // If previousText was modified, clear completion text
                     } else {
+
                         noteText.value =
                             it.text.substring(0, it.text.length - completion.value.length)
                         completion.value = ""
@@ -381,7 +370,7 @@ fun TextInputBox(
                 if (performCompletion) {
                     actionGenerated.value = false
                 }
-
+//
                 if (changedByCompletion.value == 0 && performCompletion) {
                     // Cancel any ongoing search
                     coroutineScope.coroutineContext.cancelChildren()
@@ -443,8 +432,8 @@ fun NoteControls(
     title: String,
     content: MutableState<String>,
     currentNoteID: MutableState<String>,
-    activityTitle: MutableState<String>,
-    action: AssistAction
+    action: AssistAction,
+    sharedViewModel: SharedViewModel
 ) {
     val firestoreViewModel = FirestoreViewModel()
 
@@ -457,7 +446,7 @@ fun NoteControls(
         color = Color.Gray
     )
 
-    var bgCorner = if (action.category != "None") 0.dp else 10.dp
+    val bgCorner = if (action.category != "None") 0.dp else 10.dp
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -512,7 +501,7 @@ fun NoteControls(
                     )
                     firestoreViewModel.loadingStatus.observeForever {
                         if (it == LoadingStatus.SUCCESS) {
-                            activityTitle.value = "Edit Note"
+                            sharedViewModel.updateTitle("Edit Note")
 
                             coroutineScope.launch {
                                 snackbarHostState.showSnackbar("Note Saved Successfully")
@@ -537,14 +526,8 @@ fun NoteControls(
                     start = 16.dp,
                     end = 16.dp
                 ),
-                // colors = ButtonDefaults.buttonColors(
-                //     backgroundColor = Color(0xFF3694C9),
-                //     contentColor = Color.White
-                // )
-
             ) {
                 Text("Save")
-
             }
         }
     }
@@ -577,51 +560,37 @@ fun NoteControls(
                         Text(
                             text = action.title,
                             modifier = Modifier.padding(
-                                top = 16.dp,
+                                top = 12.dp,
                                 bottom = 4.dp,
-                                start = 16.dp,
-                                end = 16.dp
+                                start = 12.dp,
+                                end = 12.dp
                             ),
-//                            color = Color.White,
-                            fontSize = 16.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = action.description,
                             modifier = Modifier.padding(
                                 top = 0.dp,
-                                bottom = 16.dp,
-                                start = 16.dp,
-                                end = 16.dp
+                                bottom = 12.dp,
+                                start = 12.dp,
+                                end = 12.dp
                             ),
-//                            color = Color.White,
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                     }
                 } else if (action.title != "None" && action.title != "") {
                     Text(
                         text = action.title,
-                        modifier = Modifier.padding(
-                            top = 16.dp,
-                            bottom = 16.dp,
-                            start = 16.dp,
-                            end = 16.dp
-                        ),
-//                        color = Color.White,
-                        fontSize = 16.sp,
+                        modifier = Modifier.padding(12.dp),
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 } else {
                     Text(
                         text = action.category,
-                        modifier = Modifier.padding(
-                            top = 16.dp,
-                            bottom = 16.dp,
-                            start = 16.dp,
-                            end = 16.dp
-                        ),
-//                        color = Color.White,
-                        fontSize = 16.sp,
+                        modifier = Modifier.padding(12.dp),
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -645,7 +614,7 @@ class ColorsTransformation(private var completion: String) : VisualTransformatio
 
 fun performAutoCompleteSearch(searchText: String, completion: MutableState<String>, changedByCompletion: MutableState<Int>) {
     if (searchText != "") {
-        var completionViewModel = CompletionViewModel()
+        val completionViewModel = CompletionViewModel()
         completionViewModel.fetchCompletion(searchText)
 
         // once the completion is fetched, update the completion state

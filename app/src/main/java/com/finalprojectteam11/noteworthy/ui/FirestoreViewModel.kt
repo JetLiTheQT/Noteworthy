@@ -1,6 +1,5 @@
 package com.finalprojectteam11.noteworthy.ui
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -13,7 +12,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 
 class FirestoreViewModel : ViewModel() {
-    val db = Firebase.firestore
+    private val db = Firebase.firestore
 
     private val _noteID = MutableLiveData<String>(null)
     val noteID: LiveData<String> = _noteID
@@ -33,15 +32,15 @@ class FirestoreViewModel : ViewModel() {
     private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: LiveData<String?> = _errorMessage
 
-    private val _loadingStatus = MutableLiveData<LoadingStatus>(LoadingStatus.SUCCESS)
+    private val _loadingStatus = MutableLiveData(LoadingStatus.SUCCESS)
     val loadingStatus: LiveData<LoadingStatus> = _loadingStatus
 
-    fun saveNote(note: String, title: String, time: String, id: String = "") {
+    fun saveNote(noteString: String, title: String, time: String, id: String = "") {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
             val note = hashMapOf(
                 "title" to title,
-                "content" to note,
+                "content" to noteString,
                 "time" to time
             )
 
@@ -266,7 +265,7 @@ class FirestoreViewModel : ViewModel() {
                 .get()
                 .addOnSuccessListener { result ->
                     _loadingStatus.value = LoadingStatus.SUCCESS
-                    var categories = mutableListOf<String>()
+                    val categories = mutableListOf<String>()
                     for (document in result) {
                         for (category in document.data["categories"] as List<String>) {
                             if (!categories.contains(category)) {
