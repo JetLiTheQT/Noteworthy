@@ -162,7 +162,7 @@ fun NoteScreen(navController: NavController, noteId : String?) {
                     Surface(
                         modifier = Modifier
                             .padding(innerPadding),
-                        // color = Color(0xFFEFEFEF),
+                        color = MaterialTheme.colors.background,
                     ) {
                         LazyColumn(
                             modifier = Modifier
@@ -210,7 +210,6 @@ fun ComposeNote(
                 text = "Enter Note Title",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                //color = Color.Black
             )
         },
         modifier = Modifier
@@ -219,17 +218,13 @@ fun ComposeNote(
             .height(56.dp)
             .clip(RoundedCornerShape(10.dp)),
         colors = TextFieldDefaults.textFieldColors(
-            focusedLabelColor = Color.Black,
-            cursorColor = Color.Black,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
-            backgroundColor = Color(0xFFE5E5E5),
-            unfocusedLabelColor = Color.Black,
+            backgroundColor = MaterialTheme.colors.surface
         ),
         textStyle = TextStyle(
             fontSize = 18.sp,
-            //color = Color.Black,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold
         ),
@@ -277,7 +272,7 @@ fun TextInputBox(
             .fillMaxWidth()
             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
             .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp))
-            //.background(Color(0xFFE5E5E5))
+            .background(MaterialTheme.colors.surface)
             .height(300.dp) // Set a fixed height for the Box
     ) {
         TextField(
@@ -432,13 +427,10 @@ fun TextInputBox(
                 .verticalScroll(rememberScrollState()) // Enable vertical scrolling if necessary
                 .clip(RoundedCornerShape(10.dp, 10.dp, 0.dp, 0.dp)),
             colors = TextFieldDefaults.textFieldColors(
-                focusedLabelColor = Color.Black,
-                cursorColor = Color.Black,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
-                backgroundColor = Color(0xFFE5E5E5),
-                unfocusedLabelColor = Color.Black,
+                backgroundColor = MaterialTheme.colors.surface,
             )
         )
     }
@@ -462,7 +454,7 @@ fun NoteControls(
     Divider(modifier = Modifier
         .fillMaxWidth()
         .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
-        //color = Color.LightGray
+        color = Color.Gray
     )
 
     var bgCorner = if (action.category != "None") 0.dp else 10.dp
@@ -471,7 +463,7 @@ fun NoteControls(
             .fillMaxWidth()
             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
             .clip(RoundedCornerShape(0.dp, 0.dp, bgCorner, bgCorner))
-            .background(Color(0xFF3694C9))
+            .background(MaterialTheme.colors.primary)
             .zIndex(1f),
     ) {
         Row(
@@ -479,7 +471,7 @@ fun NoteControls(
                 .fillMaxWidth()
                 .padding(0.dp)
                 .clip(RoundedCornerShape(0.dp, 0.dp, 10.dp, 10.dp))
-                .background(Color(0xFFE5E5E5))
+                .background(MaterialTheme.colors.surface)
                 .zIndex(2f),
         ) {
             IconButton(
@@ -503,7 +495,7 @@ fun NoteControls(
                 Icon(
                     ImageVector.vectorResource(id = R.drawable.mic_fill1_wght400_grad0_opsz48),
                     contentDescription = "Record Voice Note",
-                    tint = Color(0xFF3694C9),
+                    tint = MaterialTheme.colors.primary,
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -571,13 +563,8 @@ fun NoteControls(
                     .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
                     .fillMaxWidth()
                     .shadow(0.dp)
-                    .zIndex(1f)
-                    ,
+                    .zIndex(1f),
                 elevation = ButtonDefaults.elevation(0.dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3694C9),
-                    contentColor = Color.White
-                ),
             )
             {
                 if (action.description != "None" && action.description != "" && action.title != "None" && action.title != "") {
@@ -595,7 +582,7 @@ fun NoteControls(
                                 start = 16.dp,
                                 end = 16.dp
                             ),
-                            color = Color.White,
+//                            color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -607,7 +594,7 @@ fun NoteControls(
                                 start = 16.dp,
                                 end = 16.dp
                             ),
-                            color = Color.White,
+//                            color = Color.White,
                             fontSize = 12.sp
                         )
                     }
@@ -620,7 +607,7 @@ fun NoteControls(
                             start = 16.dp,
                             end = 16.dp
                         ),
-                        color = Color.White,
+//                        color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -633,7 +620,7 @@ fun NoteControls(
                             start = 16.dp,
                             end = 16.dp
                         ),
-                        color = Color.White,
+//                        color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -704,14 +691,14 @@ fun buildAnnotatedStringWithColors(text:String, completion: String): AnnotatedSt
         builder.append(" ")
         // Append right arrow with border
         builder.withStyle(style = SpanStyle(
-            //color = Color.Gray,
-            //background = Color.LightGray,
-            shadow = Shadow(
-                //color = Color.Gray,
-                offset = Offset(1f, 1f),
-                blurRadius = 1f
-            ),
-            baselineShift = BaselineShift(0.1f),
+            color = Color.Gray,
+            background = Color.LightGray,
+//            shadow = Shadow(
+//                //color = Color.Gray,
+//                offset = Offset(1f, 1f),
+//                blurRadius = 1f
+//            ),
+//            baselineShift = BaselineShift(0.1f),
         )) {
             append(" Swipe ➟ ")
         }

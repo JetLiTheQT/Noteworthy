@@ -63,7 +63,7 @@ fun FloatingActionButton(navController: NavController){
             //backgroundColor = Color(0xFF3694C9),
             //contentColor = Color.White,
             modifier = Modifier
-                .padding(16.dp)
+                .padding(2.dp)
                 .size(72.dp),
             shape = CircleShape
         ) {

@@ -19,7 +19,7 @@ private val LightColors = lightColors(
     surface = md_theme_light_surface,
     onSurface = md_theme_light_onSurface,
     error = md_theme_light_error,
-    onError = md_theme_light_onError
+    onError = md_theme_light_onError,
 )
 
 private val DarkColors = darkColors(
@@ -34,7 +34,7 @@ private val DarkColors = darkColors(
     surface = md_theme_dark_surface,
     onSurface = md_theme_dark_onSurface,
     error = md_theme_dark_error,
-    onError = md_theme_dark_onError
+    onError = md_theme_dark_onError,
 )
 
 @Composable

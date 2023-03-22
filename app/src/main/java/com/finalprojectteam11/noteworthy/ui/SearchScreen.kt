@@ -58,7 +58,7 @@ fun SearchScreen(navController: NavController, query : String?) {
             Surface(
                 modifier = Modifier
                     .padding(innerPadding),
-                //color = Color(0xFFEFEFEF),
+                color = MaterialTheme.colors.background,
             ) {
                 LazyColumn(
                     modifier = Modifier
@@ -95,7 +95,8 @@ fun SearchResults(navController: NavController, algoliaResults: List<SearchResul
                 text = "No results found.",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+                color = MaterialTheme.colors.onBackground
             )
         } else {
             Column(content = {

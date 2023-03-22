@@ -1,11 +1,9 @@
 package com.finalprojectteam11.noteworthy.ui
 
 import android.annotation.SuppressLint
+import android.content.res.Resources
 import android.util.Log
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,6 +34,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.Note
+import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
 
 @Composable
 // Dummy route for main screen
@@ -109,7 +108,6 @@ fun MainScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(0.dp),
-        //backgroundColor = Color.Transparent,
         topBar = { TopNavBar(navController = navController) },
         bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = { FloatingActionButton(navController) },
@@ -120,7 +118,7 @@ fun MainScreen() {
                 Surface(
                     modifier = Modifier
                         .fillMaxSize(),
-                    //color = Color(0xFFEFEFEF) ,
+                   color = MaterialTheme.colors.background,
                 ) {
                     LazyColumn(
                         modifier = Modifier
@@ -209,10 +207,17 @@ fun FilterButton(text: String, id: Int, selectedButtons: SnapshotStateList<Boole
             .padding(start = 8.dp, end = 4.dp)
             .height(38.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            //backgroundColor = if (isSelected) Color.LightGray else Color(0xFFE5E5E5),
-            //contentColor = Color.Black
-        )
+
+        colors =
+            if (isSelected) {
+                ButtonDefaults.buttonColors()
+            } else {
+                ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.surface,
+                    contentColor = MaterialTheme.colors.onSurface
+                )
+            }
+
 
     ) {
         Text(text = text)
@@ -296,7 +301,6 @@ fun pinnedNotes(
                 modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
             )
         } else {
-
             if (!currentDisplayChoice) {
                 LazyRow(modifier = Modifier
                     .padding(top = 16.dp)
@@ -310,11 +314,10 @@ fun pinnedNotes(
                 )
             } else {
                 Column(content = {
-
                     for (note in notesList) {
                         NoteListItem(note, navController)
                         if (note != notesList.last()) {
-                            Divider()//color = Color.LightGray)
+                            Divider()
                         }
                     }
                 })
@@ -363,7 +366,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                     for (note in notesList) {
                         NoteListItem(note, navController)
                         if (note != notesList.last()) {
-                            Divider()//color = Color.LightGray)
+                            Divider()
                         }
                     }
                 })
@@ -390,13 +393,15 @@ fun NoteCard(note: Note, navController: NavController) {
                 }
             ),
         shape = RoundedCornerShape(20.dp),
-        //backgroundColor = Color(0xFFE5E5E5),
+        elevation = 0.dp,
+        backgroundColor = MaterialTheme.colors.surface
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+       Column(modifier = Modifier.padding(14.dp)) {
             Text(
                 text = if (note.title == "") "Untitled" else note.title,
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
                 text = if (note.content.length > 50) note.content.substring(0, 50) + "..." else note.content,
@@ -428,7 +433,7 @@ fun NoteListItem(note: Note, navController: NavController) {
         modifier = Modifier
             .padding(14.dp)
             .clickable {
-                navController.navigate("edit_note/"+ note.id)
+                navController.navigate("edit_note/" + note.id)
             }
     )
 }
@@ -452,7 +457,6 @@ fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -
             Icon(
                 imageVector = Icons.Filled.Search,
                 contentDescription = "Search",
-                //tint = Color.Black
             )
         },
         modifier = Modifier
@@ -462,13 +466,10 @@ fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -
             .clip(RoundedCornerShape(10.dp))
             .focusRequester(focusRequester),
         colors = TextFieldDefaults.textFieldColors(
-            focusedLabelColor = Color.Black,
-            cursorColor = Color.Black,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
-            backgroundColor = Color(0xFFE5E5E5),
-            unfocusedLabelColor = Color.Black,
+            backgroundColor = MaterialTheme.colors.surface
         )
     )
 }
