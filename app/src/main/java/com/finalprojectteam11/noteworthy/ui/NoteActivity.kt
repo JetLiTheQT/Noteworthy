@@ -77,10 +77,9 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
     var noteFetched = remember { mutableStateOf(false) }
 
     val completionViewModel = CompletionViewModel()
-
+    val firestoreViewModel = FirestoreViewModel()
 
     if (noteId != null && noteId != "") {
-        val firestoreViewModel = FirestoreViewModel()
         firestoreViewModel.getNote(noteId)
 
         // once the completion is fetched, update the completion state
@@ -174,7 +173,19 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
                                 TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated, actionVisible, notePrivate, completionViewModel)
                             }
                             item {
-                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel, actionVisible, navController)
+                                NoteControls(
+                                    launcher,
+                                    snackbarHostState,
+                                    searchQuery,
+                                    noteText,
+                                    currentNoteID,
+                                    action,
+                                    sharedViewModel,
+                                    actionVisible,
+                                    navController,
+                                    notePrivate,
+                                    firestoreViewModel
+                                )
                             }
                             item {
                                 Spacer(modifier = Modifier.height(50.dp))
@@ -461,7 +472,9 @@ fun NoteControls(
     action: AssistAction,
     sharedViewModel: SharedViewModel,
     actionVisible: MutableTransitionState<Boolean>,
-    navController: NavController
+    navController: NavController,
+    notePrivate: MutableState<Boolean>,
+    firestoreViewModel: FirestoreViewModel
 ) {
     val firestoreViewModel = FirestoreViewModel()
 
@@ -518,6 +531,22 @@ fun NoteControls(
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
+            IconButton(
+                onClick = {
+                    notePrivate.value = !notePrivate.value
+                },
+                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
+            ) {
+                Icon(
+                    ImageVector.vectorResource(
+                        id = if (notePrivate.value) R.drawable.lock_fill1_wght400_grad0_opsz48 else R.drawable.lock_open_fill1_wght400_grad0_opsz48
+                    ),
+                    contentDescription = "Private Mode",
+                    tint = MaterialTheme.colors.primary,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
             Button(
                 onClick = {
                     focusManager.clearFocus() // Close the keyboard tray
@@ -526,7 +555,8 @@ fun NoteControls(
                         content.value,
                         title,
                         System.currentTimeMillis().toString(),
-                        currentNoteID.value
+                        currentNoteID.value,
+                        notePrivate.value
                     )
                     firestoreViewModel.loadingStatus.observeForever {
                         if (it == LoadingStatus.SUCCESS) {
