@@ -2,7 +2,6 @@ package com.finalprojectteam11.noteworthy.ui
 
 import android.app.Activity
 import android.app.SearchManager
-import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import android.content.Context
 import android.content.Intent
@@ -46,10 +45,20 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.AssistAction
+import com.finalprojectteam11.noteworthy.data.AssistActionDeserializer
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 
 @Composable
 fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, noteId : String?) {
@@ -62,6 +71,7 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
     val currentNoteID = remember { mutableStateOf("") }
     var action by remember { mutableStateOf(AssistAction()) }
     val actionGenerated = remember { mutableStateOf(false) }
+    var actionVisible = remember { MutableTransitionState(false) }
     var noteFetched = false;
 
     if (noteId != null && noteId != "") {
@@ -86,7 +96,8 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
         completionViewModel.actionResults.observeForever {
             if (!actionGenerated.value && it != null && it.choices.isNotEmpty()) {
                 val actionJSON = it.choices[0].text.substringAfter("{").substringBeforeLast("}")
-                val actionJSONString = "{$actionJSON}"
+                val trailingCommasRemoved = actionJSON.replace(Regex(",(?=\\s*[}\\]])"), "")
+                val actionJSONString =  "{$trailingCommasRemoved}"
 
                 // Get last double quote in JSON string and remove trailing comma if present
                 val lastQuoteIndex = actionJSONString.lastIndexOf("\"")
@@ -102,9 +113,18 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
                         coerceInputValues = true
                     }
 
-                    action = json.decodeFromString(actionJSONStringFixed)
-                    loadActionIntents(action)
+                    val gson: Gson = GsonBuilder()
+                        .registerTypeAdapter(AssistAction::class.java, AssistActionDeserializer())
+                        .create()
+
+                    val assistAction: AssistAction = gson.fromJson(actionJSONString, AssistAction::class.java)
+
+                    action = assistAction
+                    loadActionIntents(action, actionVisible)
                     actionGenerated.value = true
+                    if (action.category != "None") {
+                        actionVisible.targetState = true
+                    }
 
                 } catch (e: Exception) {
                     Log.d("JSON", "Error parsing JSON")
@@ -160,10 +180,10 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
                                 ComposeNote(searchQuery = searchQuery, onSearchQueryChange = { searchQuery = it })
                             }
                             item {
-                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated)
+                                TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated, actionVisible)
                             }
                             item {
-                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel)
+                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel, actionVisible)
                             }
                             item {
                                 Spacer(modifier = Modifier.height(50.dp))
@@ -235,7 +255,8 @@ fun TextInputBox(
     noteText: MutableState<String>,
     completion: MutableState<String>,
     changedByCompletion: MutableState<Int>,
-    actionGenerated: MutableState<Boolean>
+    actionGenerated: MutableState<Boolean>,
+    actionVisible: MutableTransitionState<Boolean>
 ) {
     noteTextField.value = TextFieldValue(noteText.value + completion.value, TextRange(noteTextField.value.selection.start, noteTextField.value.selection.end))
     val coroutineScope = rememberCoroutineScope()
@@ -433,16 +454,18 @@ fun NoteControls(
     content: MutableState<String>,
     currentNoteID: MutableState<String>,
     action: AssistAction,
-    sharedViewModel: SharedViewModel
+    sharedViewModel: SharedViewModel,
+    actionVisible: MutableTransitionState<Boolean>
 ) {
     val firestoreViewModel = FirestoreViewModel()
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    Divider(modifier = Modifier
-        .fillMaxWidth()
-        .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
+    Divider(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
         color = Color.Gray
     )
 
@@ -531,8 +554,11 @@ fun NoteControls(
             }
         }
     }
-    if (action.category != "None") {
-
+    AnimatedVisibility(
+        visibleState = actionVisible,
+        enter = fadeIn() + slideInVertically(),
+        exit = fadeOut() + slideOutVertically(),
+        content = {
             Button(
                 onClick = {
                     // Launch intent from action
@@ -550,24 +576,27 @@ fun NoteControls(
                 elevation = ButtonDefaults.elevation(0.dp),
             )
             {
-                if (action.description != "None" && action.description != "" && action.title != "None" && action.title != "") {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 0.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
 
-                    ) {
-                        Text(
-                            text = action.title,
-                            modifier = Modifier.padding(
-                                top = 12.dp,
-                                bottom = 4.dp,
-                                start = 12.dp,
-                                end = 12.dp
-                            ),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                @OptIn(ExperimentalAnimationApi::class)
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 0.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+
+                ) {
+                    Text(
+                        text = if (action.title != "None" && action.title != "") action.title else action.category,
+                        modifier = Modifier.padding(
+                            top = 12.dp,
+                            bottom = if (action.description != "None" && action.description != "") 4.dp else 12.dp,
+                            start = 12.dp,
+                            end = 12.dp
+                        ),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (action.description != "None" && action.description != "") {
                         Text(
                             text = action.description,
                             modifier = Modifier.padding(
@@ -579,24 +608,12 @@ fun NoteControls(
                             fontSize = 14.sp
                         )
                     }
-                } else if (action.title != "None" && action.title != "") {
-                    Text(
-                        text = action.title,
-                        modifier = Modifier.padding(12.dp),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                } else {
-                    Text(
-                        text = action.category,
-                        modifier = Modifier.padding(12.dp),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
             }
-    }
+        }
+    )
 }
+
 fun isSpeechRecognizerAvailable(context: Context): Boolean {
     val packageManager = context.packageManager
     val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -676,7 +693,7 @@ fun buildAnnotatedStringWithColors(text:String, completion: String): AnnotatedSt
     return builder.toAnnotatedString()
 }
 
-fun loadActionIntents(action: AssistAction) {
+fun loadActionIntents(action: AssistAction, actionVisible: MutableTransitionState<Boolean>) {
     when (action.category) {
         "None" -> {
             action.category = "None"
@@ -760,9 +777,9 @@ fun loadActionIntents(action: AssistAction) {
                     intent.data = Uri.parse(action.url)
                     action.intent = intent
                 } else {
+                    // Open action in AI view
                     action.category = "None"
                 }
-               // Open action in AI view
             } else {
                 action.category = "None"
             }

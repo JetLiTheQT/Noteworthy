@@ -23,12 +23,8 @@ object AppSettings {
     }
 
     var selectedSortBy: String
-        get() = sharedPreferences.getString(SELECTED_SORT_BY_KEY, "time") ?: "time"
+        get() = sharedPreferences.getString(SELECTED_SORT_BY_KEY, "Date (Newest-Oldest)") ?: "Date (Newest-Oldest)"
         set(value) = sharedPreferences.edit().putString(SELECTED_SORT_BY_KEY, value).apply()
-
-    var selectedQueryDirection: String
-        get() = sharedPreferences.getString(SELECTED_QUERY_DIRECTION_KEY, "DESCENDING") ?: "DESCENDING"
-        set(value) = sharedPreferences.edit().putString(SELECTED_QUERY_DIRECTION_KEY, value).apply()
 
     var displayChoice: Boolean
         get() = sharedPreferences.getBoolean(DISPLAY_CHOICE_KEY, false)

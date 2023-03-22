@@ -114,14 +114,21 @@ class FirestoreViewModel : ViewModel() {
     fun getNotes(filter: String = "") {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
-            val queryDirection = if (AppSettings.selectedQueryDirection == "ASCENDING") {
+
+            val queryDirection = if (AppSettings.selectedSortBy == "Name (A-Z)" || AppSettings.selectedSortBy == "Date (Oldest-Newest)") {
                 Query.Direction.ASCENDING
             } else {
                 Query.Direction.DESCENDING
             }
 
+            val selectedSort = if (AppSettings.selectedSortBy == "Name (A-Z)" || AppSettings.selectedSortBy == "Name (Z-A)") {
+                "title"
+            } else {
+                "time"
+            }
+
             val query = getFilteredNotesQuery(filter)
-                .orderBy(AppSettings.selectedSortBy, queryDirection)
+                .orderBy(selectedSort, queryDirection)
 
             query.get()
                 .addOnSuccessListener { result ->
@@ -138,15 +145,21 @@ class FirestoreViewModel : ViewModel() {
     fun getPinnedNotes(filter: String = "") {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
-            val queryDirection = if (AppSettings.selectedQueryDirection == "ASCENDING") {
+            val queryDirection = if (AppSettings.selectedSortBy == "Name (A-Z)" || AppSettings.selectedSortBy == "Date (Oldest-Newest)") {
                 Query.Direction.ASCENDING
             } else {
                 Query.Direction.DESCENDING
             }
 
+            val selectedSort = if (AppSettings.selectedSortBy == "Name (A-Z)" || AppSettings.selectedSortBy == "Name (Z-A)") {
+                "title"
+            } else {
+                "time"
+            }
+
             val query = getFilteredNotesQuery(filter)
                 .whereEqualTo("pinned", true)
-                .orderBy(AppSettings.selectedSortBy, queryDirection)
+                .orderBy(selectedSort, queryDirection)
 
             query.get()
                 .addOnSuccessListener { result ->
