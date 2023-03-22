@@ -586,6 +586,24 @@ fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: F
                 Text(if (note.pinned) "Unpin" else "Pin")
             }
             DropdownMenuItem(onClick = {
+                firestoreViewModel.toggleNotePrivate(note.id, note.private)
+                showPopupMenu.value = false
+                if (note.private) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully marked as public")
+                    }
+                }
+                if (!note.private) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully marked as private")
+                    }
+                }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text(if (note.private) "Mark Public" else "Mark Private")
+            }
+            DropdownMenuItem(onClick = {
                 firestoreViewModel.deleteNote(note.id) //Delete the note
                 showPopupMenu.value = false //Close popup.
                 coroutineScope.launch {

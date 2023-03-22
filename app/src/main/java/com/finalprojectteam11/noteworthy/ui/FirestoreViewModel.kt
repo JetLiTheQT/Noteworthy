@@ -191,7 +191,7 @@ class FirestoreViewModel : ViewModel() {
     fun toggleNotePrivate(noteId: String, currentPrivateStatus: Boolean) {
         val noteRef = db.collection("notes").document(noteId)
 
-        // Toggle the pinned status
+        // Toggle the private status
         val newPrivateStatus = !currentPrivateStatus
 
         noteRef.update("private", newPrivateStatus)
