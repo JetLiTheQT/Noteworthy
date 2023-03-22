@@ -12,6 +12,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -336,7 +339,7 @@ fun pinnedNotes(
             } else {
                 Column(content = {
                     for (note in notesList) {
-                        NoteListItem(note, navController)
+                        NoteListItem(note, navController, firestoreViewModel, snackbarHostState)
                         if (note != notesList.last()) {
                             Divider()
                         }
@@ -384,7 +387,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                 Column(content = {
 
                     for (note in notesList) {
-                        NoteListItem(note, navController)
+                        NoteListItem(note, navController, firestoreViewModel,snackbarHostState)
                         if (note != notesList.last()) {
                             Divider()
                         }
@@ -400,100 +403,163 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
 fun NoteCard(note: Note, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel) {
     val showPopupMenu = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-
-    Card(
-        modifier = Modifier
-            .padding(start = 8.dp, end = 8.dp)
-            .width(200.dp)
-            .height(200.dp)
-            .combinedClickable(
-                onClick = {
-                    Log.d("NoteCard", "Clicked on note: " + note.id)
-                    navController.navigate("edit_note/" + note.id)
-                },
-                onLongClick = {
-                    showPopupMenu.value = true
-                }
-            ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = 0.dp,
-        backgroundColor = MaterialTheme.colors.surface
-    ) {
-       Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = if (note.title == "") "Untitled" else note.title,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = if (note.content.length > 50) note.content.substring(0, 50) + "..." else note.content,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
-            )
+    Box(contentAlignment = Alignment.Center){
+        Card(
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp)
+                .width(200.dp)
+                .height(200.dp)
+                .combinedClickable(
+                    onClick = {
+                        Log.d("NoteCard", "Clicked on note: " + note.id)
+                        navController.navigate("edit_note/" + note.id)
+                    },
+                    onLongClick = {
+                        showPopupMenu.value = true
+                    }
+                ),
+            shape = RoundedCornerShape(20.dp),
+            elevation = 0.dp,
+            backgroundColor = MaterialTheme.colors.surface
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(
+                    text = if (note.title == "") "Untitled" else note.title,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = if (note.content.length > 50) note.content.substring(
+                        0,
+                        50
+                    ) + "..." else note.content,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            }
         }
-    }
 
-    DropdownMenu(
-        expanded = showPopupMenu.value,
-        onDismissRequest = { showPopupMenu.value = false },
-        modifier = Modifier.wrapContentSize(Alignment.TopStart)
-    ) {
-        DropdownMenuItem(onClick = {
-            firestoreViewModel.toggleNotePinned(note.id, note.pinned)
-            showPopupMenu.value = false
-            if (note.pinned){
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Your note was successfully unpinned")
+        DropdownMenu(
+            expanded = showPopupMenu.value,
+            onDismissRequest = { showPopupMenu.value = false },
+            modifier = Modifier.wrapContentSize(Alignment.TopStart)
+        ) {
+            DropdownMenuItem(onClick = {
+                firestoreViewModel.toggleNotePinned(note.id, note.pinned)
+                showPopupMenu.value = false
+                if (note.pinned) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully unpinned")
+                    }
                 }
-            }
-            if (!note.pinned){
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Your note was successfully pinned")
+                if (!note.pinned) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully pinned")
+                    }
                 }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text(if (note.pinned) "Unpin" else "Pin")
             }
-            firestoreViewModel.getNotes()
-            firestoreViewModel.getPinnedNotes()
-        }) {
-            Text(if (note.pinned) "Unpin" else "Pin")
-        }
-        DropdownMenuItem(onClick = {
-            firestoreViewModel.deleteNote(note.id) //Delete the note
-            showPopupMenu.value = false //Close popup.
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Your note was successfully deleted")
+            DropdownMenuItem(onClick = {
+                firestoreViewModel.deleteNote(note.id) //Delete the note
+                showPopupMenu.value = false //Close popup.
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Your note was successfully deleted")
+                }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text("Delete")
             }
-            firestoreViewModel.getNotes()
-            firestoreViewModel.getPinnedNotes()
-        }) {
-            Text("Delete")
         }
     }
 }
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun NoteListItem(note: Note, navController: NavController) {
-    ListItem(
-        text = {
-            Text(
-                text = if (note.title == "") "Untitled" else note.title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        secondaryText = {
-            Text(
-                text = if (note.content.length > 50) note.content.substring(0, 50) + "..." else note.content,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
-            )
-        },
-        modifier = Modifier
-            .padding(14.dp)
-            .clickable {
-                navController.navigate("edit_note/" + note.id)
+fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: FirestoreViewModel, snackbarHostState: SnackbarHostState) {
+    val showPopupMenu = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    Box(contentAlignment = Alignment.Center) {
+        ListItem(
+            text = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (note.title == "") "Untitled" else note.title,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { showPopupMenu.value = true },
+                    ) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Dropdown")
+                    }
+                }
+            },
+            secondaryText = {
+                Text(
+                    text = if (note.content.length > 50) note.content.substring(
+                        0,
+                        35
+                    ) + "..." else note.content,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            },
+            modifier = Modifier
+                .padding(14.dp)
+                .combinedClickable(
+                    onClick = {
+                        Log.d("NoteCard", "Clicked on note: " + note.id)
+                        navController.navigate("edit_note/" + note.id)
+                    }
+                )
+        )
+        DropdownMenu(
+            expanded = showPopupMenu.value,
+            onDismissRequest = { showPopupMenu.value = false },
+            modifier = Modifier.wrapContentSize(Alignment.TopStart),
+            offset = DpOffset(x = (-66).dp, y = (-20).dp)
+
+        ) {
+            DropdownMenuItem(onClick = {
+                firestoreViewModel.toggleNotePinned(note.id, note.pinned)
+                showPopupMenu.value = false
+                if (note.pinned) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully unpinned")
+                    }
+                }
+                if (!note.pinned) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully pinned")
+                    }
+                }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text(if (note.pinned) "Unpin" else "Pin")
             }
-    )
+            DropdownMenuItem(onClick = {
+                firestoreViewModel.deleteNote(note.id) //Delete the note
+                showPopupMenu.value = false //Close popup.
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Your note was successfully deleted")
+                }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text("Delete")
+            }
+        }
+    }
 }
 
 
