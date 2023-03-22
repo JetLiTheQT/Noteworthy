@@ -385,7 +385,6 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                 )
             } else {
                 Column(content = {
-
                     for (note in notesList) {
                         NoteListItem(note, navController, firestoreViewModel,snackbarHostState)
                         if (note != notesList.last()) {
@@ -418,11 +417,11 @@ fun NoteCard(note: Note, navController: NavController, snackbarHostState: Snackb
                         showPopupMenu.value = true
                     }
                 ),
-            shape = RoundedCornerShape(20.dp),
-            elevation = 0.dp,
+            shape = RoundedCornerShape(8.dp),
+            elevation = 4.dp,
             backgroundColor = MaterialTheme.colors.surface
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = if (note.title == "") "Untitled" else note.title,
                     fontSize = 18.sp,
@@ -489,7 +488,7 @@ fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: F
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = if (note.title == "") "Untitled" else note.title,
