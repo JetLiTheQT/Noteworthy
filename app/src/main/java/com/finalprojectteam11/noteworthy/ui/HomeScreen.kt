@@ -32,6 +32,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.finalprojectteam11.noteworthy.R
+import com.finalprojectteam11.noteworthy.data.AppSettings
 import com.finalprojectteam11.noteworthy.data.Note
 
 @Composable
@@ -44,7 +45,7 @@ fun MainScreen() {
     val navController = rememberNavController()
     val items = listOf(Screen.Home, Screen.AddNote, Screen.Settings)
     val currentScreen = navController.currentBackStackEntryAsState()
-    val currentDisplayChoice = remember { mutableStateOf(false) }
+    val currentDisplayChoice = remember { mutableStateOf(AppSettings.displayChoice) }
     val searchQuery = mutableStateOf("")
     // Get the current screen and its title
     items.find { it.route == currentScreen.value?.destination?.route }
@@ -141,6 +142,7 @@ fun MainScreen() {
                         item {
                             displayChoice(onDisplayChoiceChange = { newDisplayChoice ->
                                 currentDisplayChoice.value = newDisplayChoice
+                                AppSettings.displayChoice = newDisplayChoice
                             })
                         }
                         item {

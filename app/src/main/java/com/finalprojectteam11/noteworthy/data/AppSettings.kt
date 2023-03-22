@@ -8,6 +8,8 @@ object AppSettings {
     private const val SELECTED_LANGUAGE_KEY = "selectedLanguage"
     private const val SELECTED_SORT_BY_KEY = "selectedSortBy"
     private const val SELECTED_QUERY_DIRECTION_KEY = "selectedQueryDirection"
+    private const val DISPLAY_CHOICE_KEY = "displayChoice"
+
 
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -26,4 +28,8 @@ object AppSettings {
     var selectedQueryDirection: String
         get() = sharedPreferences.getString(SELECTED_QUERY_DIRECTION_KEY, "DESCENDING") ?: "DESCENDING"
         set(value) = sharedPreferences.edit().putString(SELECTED_QUERY_DIRECTION_KEY, value).apply()
+
+    var displayChoice: Boolean
+        get() = sharedPreferences.getBoolean(DISPLAY_CHOICE_KEY, false)
+        set(value) = sharedPreferences.edit().putBoolean(DISPLAY_CHOICE_KEY, value).apply()
 }
