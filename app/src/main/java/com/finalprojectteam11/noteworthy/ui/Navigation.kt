@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.*
@@ -104,7 +105,7 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
             else -> "Noteworthy"
         }
     }
-    
+
     TopAppBar(
         title = { Text(title) },
         navigationIcon = if (canGoBack) {
@@ -113,7 +114,12 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
-        } else null,
+        } else if (!canGoBack) {{
+            IconButton(onClick = { navController.navigateUp() }){
+                Icon(painter = painterResource(id = R.mipmap.ic_launcher_foreground), contentDescription = "Icon")
+            }
+        }}
+        else null,
     )
 }
 

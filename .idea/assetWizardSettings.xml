@@ -42,6 +42,19 @@
                                           </PersistentState>
                                         </value>
                                       </entry>
+                                      <entry key="image">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="color" value="000000" />
+                                                <entry key="imagePath" value="D:\WinterTerm\CS492\Group Project\Logo Design Photoshop\secondDraft.png" />
+                                                <entry key="opacityPercent" value="60" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
                                       <entry key="text">
                                         <value>
                                           <PersistentState>
@@ -68,6 +81,8 @@
                                   </option>
                                   <option name="values">
                                     <map>
+                                      <entry key="assetType" value="IMAGE" />
+                                      <entry key="imageAsset" value="D:\WinterTerm\CS492\Group Project\Logo Design Photoshop\secondDraft.png" />
                                       <entry key="outputName" value="ic_support" />
                                     </map>
                                   </option>
@@ -96,6 +111,8 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
+                                                <entry key="imagePath" value="D:\WinterTerm\CS492\Group Project\Logo Design Photoshop\secondDraft.png" />
+                                                <entry key="scalingPercent" value="62" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -123,6 +140,12 @@
                                           </PersistentState>
                                         </value>
                                       </entry>
+                                    </map>
+                                  </option>
+                                  <option name="values">
+                                    <map>
+                                      <entry key="backgroundAssetType" value="COLOR" />
+                                      <entry key="backgroundColor" value="718586" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -293,17 +316,17 @@
                             </entry>
                           </map>
                         </option>
-                        <option name="values">
-                          <map>
-                            <entry key="outputIconType" value="ACTIONBAR" />
-                          </map>
-                        </option>
                       </PersistentState>
                     </value>
                   </entry>
                 </map>
               </option>
             </PersistentState>
+          </value>
+        </entry>
+        <entry key="vectorWizard">
+          <value>
+            <PersistentState />
           </value>
         </entry>
       </map>
