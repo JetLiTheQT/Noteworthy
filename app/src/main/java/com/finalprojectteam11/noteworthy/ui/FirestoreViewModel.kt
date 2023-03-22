@@ -10,6 +10,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
+import com.finalprojectteam11.noteworthy.data.AppSettings
 
 class FirestoreViewModel : ViewModel() {
     private val db = Firebase.firestore
@@ -112,147 +113,60 @@ class FirestoreViewModel : ViewModel() {
     fun getNotes(filter: String = "") {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
-
-            if (filter == "NW_INTERNAL_NEW") {
-                db.collection("notes")
-                    .orderBy("time", Query.Direction.DESCENDING)
-                    .limit(5)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _noteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
-            }
-            else if (filter == "NW_INTERNAL_PRIVATE") {
-                db.collection("notes")
-                    .whereEqualTo("private", true)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _noteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
-            }
-            else if (filter == "NW_INTERNAL_AI_ASSIST") {
-                db.collection("notes")
-                    .whereNotEqualTo("private", true)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _noteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
-            }
-            else if (filter != "") {
-                db.collection("notes")
-                    .whereArrayContains("categories", filter)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _noteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
+            val queryDirection = if (AppSettings.selectedQueryDirection == "ASCENDING") {
+                Query.Direction.ASCENDING
             } else {
-                db.collection("notes")
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _noteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
+                Query.Direction.DESCENDING
             }
+
+            val query = getFilteredNotesQuery(filter)
+                .orderBy(AppSettings.selectedSortBy, queryDirection)
+
+            query.get()
+                .addOnSuccessListener { result ->
+                    _loadingStatus.value = LoadingStatus.SUCCESS
+                    _noteResults.value = result.documents
+                }
+                .addOnFailureListener { exception ->
+                    _loadingStatus.value = LoadingStatus.ERROR
+                    _errorMessage.value = exception.message
+                }
         }
     }
 
     fun getPinnedNotes(filter: String = "") {
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
-
-            if (filter == "NW_INTERNAL_NEW") {
-                db.collection("notes")
-                    .whereEqualTo("pinned", true)
-                    .orderBy("time", Query.Direction.DESCENDING)
-                    .limit(5)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _pinnedNoteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
-            }
-            else if (filter == "NW_INTERNAL_PRIVATE") {
-                db.collection("notes")
-                    .whereEqualTo("pinned", true)
-                    .whereEqualTo("private", true)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _pinnedNoteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
-            }
-            else if (filter == "NW_INTERNAL_AI_ASSIST") {
-                db.collection("notes")
-                    .whereEqualTo("pinned", true)
-                    .whereNotEqualTo("private", true)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _pinnedNoteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
-            }
-            else if (filter != "") {
-                db.collection("notes")
-                    .whereEqualTo("pinned", true)
-                    .whereArrayContains("categories", filter)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _pinnedNoteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
+            val queryDirection = if (AppSettings.selectedQueryDirection == "ASCENDING") {
+                Query.Direction.ASCENDING
             } else {
-                db.collection("notes")
-                    .whereEqualTo("pinned", true)
-                    .get()
-                    .addOnSuccessListener { result ->
-                        _loadingStatus.value = LoadingStatus.SUCCESS
-                        _pinnedNoteResults.value = result.documents
-                    }
-                    .addOnFailureListener { exception ->
-                        _loadingStatus.value = LoadingStatus.ERROR
-                        _errorMessage.value = exception.message
-                    }
+                Query.Direction.DESCENDING
             }
+
+            val query = getFilteredNotesQuery(filter)
+                .whereEqualTo("pinned", true)
+                //.orderBy(AppSettings.selectedSortBy, queryDirection)
+
+            query.get()
+                .addOnSuccessListener { result ->
+                    _loadingStatus.value = LoadingStatus.SUCCESS
+                    _pinnedNoteResults.value = result.documents
+                }
+                .addOnFailureListener { exception ->
+                    _loadingStatus.value = LoadingStatus.ERROR
+                    _errorMessage.value = exception.message
+                }
+        }
+    }
+
+    private fun getFilteredNotesQuery(filter: String): Query {
+        val baseQuery = db.collection("notes")
+        return when (filter) {
+            "NW_INTERNAL_NEW" -> baseQuery.limit(5)
+            "NW_INTERNAL_PRIVATE" -> baseQuery.whereEqualTo("private", true)
+            "NW_INTERNAL_AI_ASSIST" -> baseQuery.whereNotEqualTo("private", true)
+            "" -> baseQuery
+            else -> baseQuery.whereArrayContains("categories", filter)
         }
     }
 
