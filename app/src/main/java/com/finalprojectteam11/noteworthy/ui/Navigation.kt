@@ -27,8 +27,8 @@ sealed class Screen(val route: String) {
     object EditNote : Screen("edit_note/{note_id}")
     object Search: Screen("search/{query}")
     object Profile: Screen("profile")
-
     object Contact: Screen("contact")
+    object Assist: Screen("assist/{title}/{description}/{response}")
 }
 
 @Composable
@@ -61,6 +61,24 @@ fun AppNavigator(navController: NavHostController, sharedViewModel: SharedViewMo
         composable(Screen.Profile.route) { ProfileScreen(navController) }
 
         composable(Screen.Contact.route) { ContactScreen(navController) }
+
+        composable(
+            Screen.Assist.route,
+            arguments = listOf(
+                navArgument("title") {
+                    type = NavType.StringType
+                },
+                navArgument("description") {
+                    type = NavType.StringType
+                },
+                navArgument("response") {
+                    type = NavType.StringType
+                },
+            )
+        ) { backStackEntry ->
+            AssistScreen(navController, backStackEntry.arguments?.getString("title"), backStackEntry.arguments?.getString("description"), backStackEntry.arguments?.getString("response"))
+
+        }
     }
 }
 
@@ -105,6 +123,7 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
             Screen.Search.route -> "Search Results"
             Screen.Contact.route -> "Contact Us"
             Screen.Profile.route -> "Your Profile"
+            Screen.Assist.route -> "AI Assist"
             else -> "Noteworthy"
         }
     }

@@ -18,7 +18,9 @@ data class AssistAction(
     val hour: Int = 0,
     val minute: Int = 0,
     @Transient
-    var intent: Intent? = null
+    var intent: Intent? = null,
+    @Transient
+    var route: String = ""
 )
 
 class AssistActionDeserializer : JsonDeserializer<AssistAction> {

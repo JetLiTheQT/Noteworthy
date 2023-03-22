@@ -183,7 +183,7 @@ fun NoteScreen(navController: NavController, sharedViewModel: SharedViewModel, n
                                 TextInputBox(noteTextField, noteText, completionText, changedByCompletion, actionGenerated, actionVisible)
                             }
                             item {
-                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel, actionVisible)
+                                NoteControls(launcher,snackbarHostState, searchQuery, noteText, currentNoteID, action, sharedViewModel, actionVisible, navController)
                             }
                             item {
                                 Spacer(modifier = Modifier.height(50.dp))
@@ -455,7 +455,8 @@ fun NoteControls(
     currentNoteID: MutableState<String>,
     action: AssistAction,
     sharedViewModel: SharedViewModel,
-    actionVisible: MutableTransitionState<Boolean>
+    actionVisible: MutableTransitionState<Boolean>,
+    navController: NavController
 ) {
     val firestoreViewModel = FirestoreViewModel()
 
@@ -565,6 +566,9 @@ fun NoteControls(
                     val intent = action.intent
                     if (intent != null) {
                         context.startActivity(intent)
+                    } else if (action.route != "") {
+                        navController.navigate(action.route)
+
                     }
                 },
                 shape = RoundedCornerShape(0.dp, 0.dp, 10.dp, 10.dp),
@@ -771,17 +775,16 @@ fun loadActionIntents(action: AssistAction, actionVisible: MutableTransitionStat
             }
         }
         else -> {
-            if (action.response != "" && action.response != "None") {
-                if (action.url != "" && action.url != "None") {
-                    val intent = Intent(Intent.ACTION_VIEW)
-                    intent.data = Uri.parse(action.url)
-                    action.intent = intent
-                } else {
-                    // Open action in AI view
-                    action.category = "None"
-                }
+            if (action.url != "" && action.url != "None") {
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = Uri.parse(action.url)
+                action.intent = intent
             } else {
-                action.category = "None"
+                if (action.response != "" && action.response != "None") {
+                    val title = if (action.title != "") action.title else "None"
+                    val description = if (action.description != "") action.description else "None"
+                    action.route = "assist/" + title + "/" + description + "/" + action.response
+                }
             }
         }
     }
