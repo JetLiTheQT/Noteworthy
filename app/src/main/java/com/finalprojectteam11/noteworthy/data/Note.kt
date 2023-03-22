@@ -8,5 +8,5 @@ data class Note(
     val id: String = "",
     val pinned: Boolean = false,
     val private: Boolean = false,
-    val categories: List<String> = listOf()
+    var category: String = ""
 )

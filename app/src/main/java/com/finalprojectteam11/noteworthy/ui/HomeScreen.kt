@@ -2,6 +2,7 @@ package com.finalprojectteam11.noteworthy.ui
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,15 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -32,15 +32,13 @@ import com.finalprojectteam11.noteworthy.R
 import com.finalprojectteam11.noteworthy.data.AppSettings
 import com.finalprojectteam11.noteworthy.data.LoadingStatus
 import com.finalprojectteam11.noteworthy.data.Note
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.format.TextStyle
 
 @Composable
 // Dummy route for main screen
 fun HomeScreen(navController: NavHostController) { }
 
+@OptIn(ExperimentalMaterialApi::class)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter", "UnrememberedMutableState")
 @Composable
 fun MainScreen() {
@@ -65,6 +63,8 @@ fun MainScreen() {
     val notesList = remember { mutableStateListOf<Note>() }
     val pinnedNotesList = remember { mutableStateListOf<Note>() }
     val selectedButtons = remember { mutableStateListOf<Boolean>() }
+    val openDialog = remember { mutableStateOf(false) }
+    val selectedNote = remember { mutableStateOf("") }
 
     // Update the notes list when the settings are changed
     LaunchedEffect(AppSettings.settingsUpdated) {
@@ -91,6 +91,7 @@ fun MainScreen() {
                     id = document.id,
                     pinned = if (document.data!!["pinned"] == null) false else document.data!!["pinned"] as Boolean,
                     private = if (document.data!!["private"] == null) false else document.data!!["private"] as Boolean,
+                    category = if (document.data!!["category"] == null) "" else document.data!!["category"].toString(),
                 )
                 notesList.add(note)
             }
@@ -108,6 +109,7 @@ fun MainScreen() {
                     id = document.id,
                     pinned = if (document.data!!["pinned"] == null) false else document.data!!["pinned"] as Boolean,
                     private = if (document.data!!["private"] == null) false else document.data!!["private"] as Boolean,
+                    category = if (document.data!!["category"] == null) "" else document.data!!["category"].toString(),
                 )
                 pinnedNotesList.add(note)
             }
@@ -120,7 +122,9 @@ fun MainScreen() {
         if (it != null) {
             for (category in it) {
                 categoriesList.add(category)
+                Log.d("Categories", category)
             }
+
         }
     }
 
@@ -165,10 +169,26 @@ fun MainScreen() {
                             })
                         }
                         item {
-                            pinnedNotes(currentDisplayChoice.value, pinnedNotesList, navController, snackbarHostState, firestoreViewModel)
+                            pinnedNotes(
+                                currentDisplayChoice.value,
+                                pinnedNotesList,
+                                navController,
+                                snackbarHostState,
+                                firestoreViewModel,
+                                openDialog,
+                                selectedNote
+                            )
                         }
                         item {
-                            allNotes(currentDisplayChoice.value, notesList, navController, snackbarHostState, firestoreViewModel)
+                            allNotes(
+                                currentDisplayChoice.value,
+                                notesList,
+                                navController,
+                                snackbarHostState,
+                                firestoreViewModel,
+                                openDialog,
+                                selectedNote
+                            )
                         }
                         item {
                             Spacer(modifier = Modifier.height(50.dp))
@@ -183,6 +203,96 @@ fun MainScreen() {
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 14.dp)
                 )
+                if (openDialog.value) {
+                    val currentNote = notesList.find { it.id == selectedNote.value }
+                    if (currentNote != null) {
+                        var category by remember { mutableStateOf(currentNote.category) }
+                        AlertDialog(
+                            onDismissRequest = {
+                                // Dismiss the dialog when the user clicks outside the dialog or on the back
+                                // button. If you want to disable that functionality, simply use an empty
+                                // onCloseRequest.
+                                openDialog.value = false
+                            },
+                            title = {
+                                Text(text = "Edit Category")
+                            },
+                            text = {
+                                Column {
+                                    Text("Choose an existing category or create a new one. Categories are automatically deleted when they are empty. ")
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    var expanded by remember { mutableStateOf(false) }
+
+                                    ExposedDropdownMenuBox(
+                                        expanded = expanded,
+                                        onExpandedChange = {
+                                            expanded = !expanded
+                                        }
+                                    ) {
+                                        TextField(
+                                            value = category,
+                                            onValueChange = {
+                                                Log.d("Category", it)
+                                                category = it
+                                            },
+                                            label = { Text(text = "Category") },
+                                            trailingIcon = {
+                                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                                    expanded = expanded
+                                                )
+                                            },
+                                            colors = ExposedDropdownMenuDefaults.textFieldColors()
+                                        )
+
+                                        // filter options based on text field value
+                                        val filteringOptions = categoriesList.filter {
+                                            it.contains(currentNote.category, true)
+                                        }
+
+                                        if (filteringOptions.isNotEmpty()) {
+                                            // menu
+                                            ExposedDropdownMenu(
+                                                expanded = expanded,
+                                                onDismissRequest = { expanded = false }
+                                            ) {
+                                                filteringOptions.forEach { selectionOption ->
+                                                    DropdownMenuItem(
+                                                        onClick = {
+                                                            category = selectionOption
+                                                            expanded = false
+                                                        }
+                                                    ) {
+                                                        Text(text = selectionOption)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        firestoreViewModel.updateNoteCategory(currentNote.id, category)
+                                        firestoreViewModel.getNotes()
+                                        firestoreViewModel.getPinnedNotes()
+                                        firestoreViewModel.getCategories()
+                                        openDialog.value = false
+                                    }) {
+                                    Text("Save")
+                                }
+                            },
+                            dismissButton = {
+                                Button(
+                                    onClick = {
+                                        openDialog.value = false
+                                    }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
+                }
             }
         },
     )
@@ -190,6 +300,7 @@ fun MainScreen() {
 
 @Composable
 fun FilterButton(text: String, id: Int, selectedButtons: SnapshotStateList<Boolean>, firestoreViewModel: FirestoreViewModel) {
+    selectedButtons.add(false)
     val isSelected = selectedButtons[id]
     Button(
         onClick = {
@@ -247,7 +358,7 @@ fun FilterButton(text: String, id: Int, selectedButtons: SnapshotStateList<Boole
 
 @Composable
 fun filterSection(
-    categoriesList: List<String>,
+    categoriesList: MutableList<String>,
     selectedButtons: SnapshotStateList<Boolean>,
     firestoreViewModel: FirestoreViewModel
 ) {
@@ -269,15 +380,17 @@ fun filterSection(
                 item {
                     FilterButton(text = "New", id = 2, selectedButtons, firestoreViewModel)
                 }
-                var i = 3
-                categoriesList.forEach {
-                    item {
-                        FilterButton(text = it, id = i, selectedButtons, firestoreViewModel)
+                if (categoriesList.size > 0) {
+                    for (a in 0 until categoriesList.size) {
+                        item {
+                            FilterButton(
+                                text = categoriesList[a],
+                                id = a + 3,
+                                selectedButtons,
+                                firestoreViewModel
+                            )
+                        }
                     }
-                    i++
-                }
-                for (a in 0..i) {
-                    selectedButtons.add(false)
                 }
             })
     }
@@ -303,7 +416,9 @@ fun pinnedNotes(
     notesList: SnapshotStateList<Note>,
     navController: NavHostController,
     snackbarHostState: SnackbarHostState,
-    firestoreViewModel: FirestoreViewModel
+    firestoreViewModel: FirestoreViewModel,
+    openDialog: MutableState<Boolean>,
+    selectedNote: MutableState<String>
 ) {
     var currentLoadingStatus = LoadingStatus.SUCCESS
     firestoreViewModel.loadingStatus.observeForever {
@@ -337,14 +452,14 @@ fun pinnedNotes(
                     contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
                     content = {
                         items(notesList.size) {
-                            NoteCard(notesList[it], navController, snackbarHostState, firestoreViewModel)
+                            NoteCard(notesList[it], navController, snackbarHostState, firestoreViewModel, openDialog, selectedNote)
                         }
                     }
                 )
             } else {
                 Column(content = {
                     for (note in notesList) {
-                        NoteListItem(note, navController, firestoreViewModel, snackbarHostState)
+                        NoteListItem(note, navController, firestoreViewModel, snackbarHostState, openDialog, selectedNote)
                         if (note != notesList.last()) {
                             Divider()
                         }
@@ -356,7 +471,15 @@ fun pinnedNotes(
 }
 
 @Composable
-fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel) {
+fun allNotes(
+    currentDisplayChoice: Boolean,
+    notesList: SnapshotStateList<Note>,
+    navController: NavController,
+    snackbarHostState: SnackbarHostState,
+    firestoreViewModel: FirestoreViewModel,
+    openDialog: MutableState<Boolean>,
+    selectedNote: MutableState<String>
+) {
     var currentLoadingStatus = LoadingStatus.SUCCESS
     firestoreViewModel.loadingStatus.observeForever {
         currentLoadingStatus = it
@@ -396,7 +519,9 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                                     notesList[it],
                                     navController,
                                     snackbarHostState,
-                                    firestoreViewModel
+                                    firestoreViewModel,
+                                    openDialog,
+                                    selectedNote
                                 )
                             }
                         }
@@ -404,7 +529,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
                 } else {
                     Column(content = {
                         for (note in notesList) {
-                            NoteListItem(note, navController, firestoreViewModel, snackbarHostState)
+                            NoteListItem(note, navController, firestoreViewModel, snackbarHostState, openDialog, selectedNote)
                             if (note != notesList.last()) {
                                 Divider()
                             }
@@ -417,7 +542,7 @@ fun allNotes(currentDisplayChoice: Boolean, notesList: SnapshotStateList<Note>, 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NoteCard(note: Note, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel) {
+fun NoteCard(note: Note, navController: NavController, snackbarHostState: SnackbarHostState, firestoreViewModel: FirestoreViewModel, openDialog: MutableState<Boolean>, selectedNote: MutableState<String>) {
     val showPopupMenu = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     Box(contentAlignment = Alignment.Center){
@@ -500,6 +625,12 @@ fun NoteCard(note: Note, navController: NavController, snackbarHostState: Snackb
                 Text(if (note.private) "Mark Public" else "Mark Private")
             }
             DropdownMenuItem(onClick = {
+                selectedNote.value = note.id
+                openDialog.value = true
+            }) {
+                Text("Edit Category")
+            }
+            DropdownMenuItem(onClick = {
                 firestoreViewModel.deleteNote(note.id) //Delete the note
                 showPopupMenu.value = false //Close popup.
                 coroutineScope.launch {
@@ -515,7 +646,7 @@ fun NoteCard(note: Note, navController: NavController, snackbarHostState: Snackb
 }
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: FirestoreViewModel, snackbarHostState: SnackbarHostState) {
+fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: FirestoreViewModel, snackbarHostState: SnackbarHostState, openDialog: MutableState<Boolean>, selectedNote: MutableState<String>) {
     val showPopupMenu = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     Box(contentAlignment = Alignment.Center) {
@@ -586,6 +717,30 @@ fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: F
                 Text(if (note.pinned) "Unpin" else "Pin")
             }
             DropdownMenuItem(onClick = {
+                firestoreViewModel.toggleNotePrivate(note.id, note.private)
+                showPopupMenu.value = false
+                if (note.private) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully marked as public")
+                    }
+                }
+                if (!note.private) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Your note was successfully marked as private")
+                    }
+                }
+                firestoreViewModel.getNotes()
+                firestoreViewModel.getPinnedNotes()
+            }) {
+                Text(if (note.private) "Mark Public" else "Mark Private")
+            }
+            DropdownMenuItem(onClick = {
+                selectedNote.value = note.id
+                openDialog.value = true
+            }) {
+                Text("Edit Category")
+            }
+            DropdownMenuItem(onClick = {
                 firestoreViewModel.deleteNote(note.id) //Delete the note
                 showPopupMenu.value = false //Close popup.
                 coroutineScope.launch {
@@ -599,8 +754,3 @@ fun NoteListItem(note: Note, navController: NavController, firestoreViewModel: F
         }
     }
 }
-
-
-
-
-

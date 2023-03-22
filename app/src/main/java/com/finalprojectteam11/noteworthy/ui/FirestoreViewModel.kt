@@ -188,6 +188,18 @@ class FirestoreViewModel : ViewModel() {
             }
     }
 
+    fun updateNoteCategory(noteId: String, category: String) {
+        val noteRef = db.collection("notes").document(noteId)
+
+        noteRef.update("category", category)
+            .addOnSuccessListener {
+                Log.d("FirestoreViewModel", "Note caterory updated")
+            }
+            .addOnFailureListener { e ->
+                Log.w("FirestoreViewModel", "Error updating note category", e)
+            }
+    }
+
     fun toggleNotePrivate(noteId: String, currentPrivateStatus: Boolean) {
         val noteRef = db.collection("notes").document(noteId)
 
@@ -234,8 +246,8 @@ class FirestoreViewModel : ViewModel() {
             else -> {
                 val filteredNotes = mutableListOf<DocumentSnapshot>()
                 for (note in notes) {
-                    val noteCategories = note.data?.get("categories") as List<String>
-                    if (noteCategories.contains(filter)) {
+                    val noteCategory = if (note.data?.get("category") != null) note.data?.get("category") else null
+                    if (noteCategory == filter) {
                         filteredNotes.add(note)
                     }
                 }
@@ -245,20 +257,20 @@ class FirestoreViewModel : ViewModel() {
     }
 
     fun getCategories() {
+        Log.d("FirestoreViewModel", "getCategories()")
         viewModelScope.launch {
             _loadingStatus.value = LoadingStatus.LOADING
 
             db.collection("notes")
-                .whereNotEqualTo("categories", null)
+                .whereNotEqualTo("category", null)
                 .get()
                 .addOnSuccessListener { result ->
                     _loadingStatus.value = LoadingStatus.SUCCESS
                     val categories = mutableListOf<String>()
                     for (document in result) {
-                        for (category in document.data["categories"] as List<String>) {
-                            if (!categories.contains(category)) {
-                                categories.add(category)
-                            }
+                        Log.d("FirestoreViewModel", "${document.data}")
+                        if (document.data["category"] != null && document.data["category"] != "" && !categories.contains(document.data["category"]) ) {
+                            categories.add(document.data["category"].toString())
                         }
                     }
                     _categoryResults.value = categories
