@@ -7,11 +7,14 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import com.google.firebase.FirebaseApp
 import com.finalprojectteam11.noteworthy.ui.theme.AppTheme
+import com.finalprojectteam11.noteworthy.data.AppSettings
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+        AppSettings.init(this)
         setContent {
             AppTheme {
                 MyApp {
