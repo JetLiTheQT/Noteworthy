@@ -137,7 +137,7 @@ fun TopNavBar (navController: NavHostController, sharedViewModel: SharedViewMode
                 }
             }
         } else if (!canGoBack) {{
-            IconButton(onClick = { navController.navigateUp() }){
+            IconButton(onClick = { navController.navigate(Screen.Home.route) }){
                 Icon(painter = painterResource(id = R.mipmap.ic_launcher_foreground), contentDescription = "Icon")
             }
         }}
