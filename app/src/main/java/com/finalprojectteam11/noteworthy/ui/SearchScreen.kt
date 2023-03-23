@@ -2,6 +2,7 @@ package com.finalprojectteam11.noteworthy.ui
 
 import android.util.Log
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,14 +181,14 @@ fun SearchBox(searchQuery: MutableState<String>, onSearchQueryChange: (String) -
             .clip(RoundedCornerShape(10.dp))
             .focusRequester(focusRequester),
         colors = TextFieldDefaults.textFieldColors(
-            textColor = MaterialTheme.colors.onPrimary,
+            textColor = if (!isSystemInDarkTheme()) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
-            backgroundColor = MaterialTheme.colors.primary,
-            cursorColor = MaterialTheme.colors.onPrimary,
-            focusedLabelColor = MaterialTheme.colors.onPrimary,
-            unfocusedLabelColor = MaterialTheme.colors.onPrimary,
+            backgroundColor = if (!isSystemInDarkTheme()) MaterialTheme.colors.primary else Color.Transparent,
+            cursorColor = if (!isSystemInDarkTheme()) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
+            focusedLabelColor = if (!isSystemInDarkTheme()) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
+            unfocusedLabelColor = if (!isSystemInDarkTheme()) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
 
 
         ),
